@@ -300,28 +300,113 @@ public class Diagnostico {
 
 	}
 
-	private void realizarDiagnostico() {
+		private void realizarDiagnostico() {
 		// implementar
 		if (connection == null){
 			conectar();
 		}
 	}
+	
+	private void diagnosticoAux(){
+		
+		if (connection == null){
+			conectar();
+		}
+		
+	}
 
 	private void listarSintomasEnfermedad() {
 		// implementar
-	}
+		
+		int option = -1;
+		
+		do {
+			sintomasEnfermedadAux();
+			System.out.println("\tPor favor, introduzca la enfermedad.\n\tPara salir del menú de opciones pulse 0");
 
+			try {
+				Statement st = connection.createStatement();
+				option = readInt();
+
+				switch (option) {
+				
+				default:
+					ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
+							+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+
+					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+
+					while (rs.next()) {
+						String sintomas = rs.getString("EN.nombre");
+						System.out.println("\t " + sintomas);
+					}
+
+					System.out.println("\n");
+					st.close();
+					break;
+				}
+
+
+			} catch (Exception e) {
+				System.err.println("Opción introducida no válida!");
+			}
+		}
+		while (option != 0);
+}
+
+	private void sintomasEnfermedadAux(){
+		
+		if (connection == null){
+			conectar();
+		}
+		
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM medicamento");
+			System.out.println("\n\tMedicamentos: \n");
+
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String nombre = rs.getString("nombre");
+				System.out.println("\tID: " + id + "\tFármaco: " + nombre);
+			}
+
+			System.out.println("\n");
+			st.close();
+		}
+		catch(Exception e){
+			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
+		}
+		
+	}
 	private void listarEnfermedadesYCodigosAsociados() {
 		// implementar
+	}
+
+	private void enfermedadesAux(){
+		
+		if (connection == null){
+			conectar();
+		}
+		
 	}
 
 	private void listarSintomasYTiposSemanticos() {
 		// implementar
 	}
+	
+	private void enfermedadesAux(){
+		
+		if (connection == null){
+			conectar();
+		}
+		
+	}
 
 	private void mostrarEstadisticasBD() {
 		// implementar
 	}
+
 
 	/**
 	 * M�todo para leer n�meros enteros de teclado.
