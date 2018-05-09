@@ -395,7 +395,7 @@ public class Diagnostico {
 		// implementar
 	}
 	
-	private void enfermedadesAux(){
+	private void sintomasAux(){
 		
 		if (connection == null){
 			conectar();
