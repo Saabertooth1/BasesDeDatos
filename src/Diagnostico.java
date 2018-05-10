@@ -322,8 +322,8 @@ public class Diagnostico {
 						System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
 
 						while (rs.next()) {
-							String sintomas = rs.getString("EN.nombre");
-							System.out.println("\t " + sintomas);
+							String enfermedades = rs.getString("EN.nombre");
+							System.out.println("\t " + enfermedades);
 						}
 
 						System.out.println("\n");
@@ -347,13 +347,13 @@ public class Diagnostico {
 
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM enfermedad");
-			System.out.println("\n\tEnfermedades: \n");
+			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM sintoma");
+			System.out.println("\n\tSintomas: \n");
 
 			while (rs.next()) {
 				int id = rs.getInt("id");
 				String nombre = rs.getString("nombre");
-				System.out.println("\tID: " + id + "\tEnfermedad: " + nombre);
+				System.out.println("\tID: " + id + "\Sintoma: " + nombre);
 			}
 
 			System.out.println("\n");
@@ -373,7 +373,7 @@ public class Diagnostico {
 		
 		do {
 			sintomasEnfermedadAux();
-			System.out.println("\tPor favor, introduzca la enfermedad.\n\tPara salir del menú de opciones pulse 0");
+			System.out.println("\tPor favor, introduzca el codigo asociado de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
 
 			try {
 				Statement st = connection.createStatement();
