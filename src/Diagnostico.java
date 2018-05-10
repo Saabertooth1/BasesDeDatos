@@ -103,196 +103,206 @@ public class Diagnostico {
 	}
 
 	private void crearBD() {
-		// implementar
-		String s;
 		PreparedStatement p = null;
 		try {
-			if(connection==null) {
+			if(conn==null) {
 				conectar();
 			}
 			
-			PreparedStatement pst = connection.prepareStatement("CREATE SCHEMA IF NOT EXISTS `diagnostico`  DEFAULT CHARACTER SET utf8;");
+			PreparedStatement pst = conn.prepareStatement("DROP DATABASE diagnostico;");
 			pst.executeUpdate();
-
-			/*s = "CREATE SCHEMA `diagnostico`;";
-			p = connection.prepareStatement(s);
-			p.executeUpdate();
-			p.close();*/
+			PreparedStatement ps = conn.prepareStatement("CREATE SCHEMA diagnostico;");
+			ps.executeUpdate();
 
 			//CREACION DE TABLAS
 
 			// Tabla disease:
-			String disease = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease`("
-					+ "`disease_id` INT NOT NULL," 
-					+ "`name` VARCHAR(255) NOT NULL," 
-					+ "PRIMARY KEY (`disease_id`));";
-			p = connection.prepareStatement(disease);
+
+			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			p = conn.prepareStatement(disease);
 			p.executeUpdate();
 			p.close();	
+			
 
 			// Tabla symptom:
-			String symptom ="CREATE TABLE IF NOT EXISTS `diagnostico`.`symptom` ("+
-					"`cui` VARCHAR(25) NOT NULL," +
-					"`name` VARCHAR(255) NOT NULL,"+
-					"PRIMARY KEY (`cui`));";
-
-			p = connection.prepareStatement(symptom);
+			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
+			p = conn.prepareStatement(symptom);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla source
-			String source = "CREATE TABLE IF NOT EXISTS `diagnostico`.`source` ( "+
-					"`source_id` INT NOT NULL," +
-					"`name` VARCHAR(255) NOT NULL," + 
-					"PRIMARY KEY (`source_id`));";
-			p = connection.prepareStatement(source);
+			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			p = conn.prepareStatement(source);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla code
-			String code="CREATE TABLE IF NOT EXISTS `diagnostico`.`code` ("+
-					"`code` VARCHAR(255) NOT NULL,"+
-					"`source_id_c` INT NOT NULL," +
-					"PRIMARY KEY (`code`),"+
-					"INDEX `source_id_c_idx` (`source_id_c` ASC)," +
-					"CONSTRAINT `source_id_c`" +
-					" FOREIGN KEY (`source_id_c`)" +
-					" REFERENCES `diagnostico`.`source` (`source_id`)" +
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION);";
-			p = connection.prepareStatement(code);
+			String code="CREATE TABLE diagnostico.code (code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (code, source_id), " +
+					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = conn.prepareStatement(code);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla semantic_type
-			String semantic_type = "CREATE TABLE IF NOT EXISTS `diagnostico`.`semantic_type` (" +
-					"`semantic_type_id` INT NOT NULL," +
-					"`cui` VARCHAR(45) NOT NULL," +
-					"PRIMARY KEY (`semantic_type_id`));";
-			p = connection.prepareStatement(semantic_type);
+			String semantic_type = "CREATE TABLE diagnostico.semantic_type (semantic_type_id INT PRIMARY KEY AUTO_INCREMENT,cui VARCHAR(45) UNIQUE)";
+			p = conn.prepareStatement(semantic_type);
 			p.executeUpdate();
 			p.close();	
 
 			// Tabla symptom_semantic_type
-			String symptom_semantic_type = "CREATE TABLE IF NOT EXISTS `diagnostico`.`symptom_semantic_type` (" +
-					"`cui_sst` VARCHAR(25) NOT NULL," +
-					"`semantic_type_id_sst` INT NOT NULL," +
-					"INDEX (`cui_sst` ASC)," +
-					"INDEX `semantic_type_id_sst_idx` (`semantic_type_id_sst` ASC)," +
-					" CONSTRAINT `cui_sst`"+
-					" FOREIGN KEY (`cui_sst`)"+
-					" REFERENCES `diagnostico`.`symptom` (`cui`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION,"+
-					" CONSTRAINT `semantic_type_id_sst`"+
-					" FOREIGN KEY (`semantic_type_id_sst`)"+
-					" REFERENCES `diagnostico`.`semantic_type` (`semantic_type_id`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION);";
-			p = connection.prepareStatement(symptom_semantic_type);
+			String symptom_semantic_type = "CREATE TABLE diagnostico.symptom_semantic_type (cui VARCHAR(25), semantic_type_id INT, " +
+					"PRIMARY KEY (cui, semantic_type_id), " +
+					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (semantic_type_id) REFERENCES semantic_type(semantic_type_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = conn.prepareStatement(symptom_semantic_type);
 			p.executeUpdate();
 			p.close();	
+			
 
 			// Tabla disease_symptom
-			String disease_symptom = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease_symptom` (" +
-					"`disease_id_ds` INT NOT NULL," +
-					"`cui_ds` VARCHAR(45) NOT NULL," +
-					"INDEX `disease_id_ds_idx` (`disease_id_ds` ASC)," +
-					"INDEX `cui_ds_idx` (`cui_ds` ASC)," +
-					" CONSTRAINT `disease_id_ds`" +
-					" FOREIGN KEY (`disease_id_ds`)" +
-					" REFERENCES `diagnostico`.`disease` (`disease_id`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION,"+
-					" CONSTRAINT `cui_ds`" +
-					" FOREIGN KEY (`cui_ds`)" +
-					" REFERENCES `diagnostico`.`symptom` (`cui`)" +
-					" ON DELETE NO ACTION" +
-					" ON UPDATE NO ACTION);";
-			p = connection.prepareStatement(disease_symptom);
+			String disease_symptom = "CREATE TABLE diagnostico.disease_symptom (disease_id INT, cui VARCHAR(25)," +
+					"PRIMARY KEY (disease_id, cui)," +
+					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT," +
+					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = conn.prepareStatement(disease_symptom);
 			p.executeUpdate();
 			p.close();	
 
 
 
 			//Tabla disease_has_code
-			String disease_has_code = "CREATE TABLE IF NOT EXISTS `diagnostico`.`disease_has_code` (" +
-					"`disease_id_dhc` INT NULL," +
-					"`code_dhc` VARCHAR(255) NULL," +
-					"`source_id_dhc` INT NULL," +
-					"INDEX `disease_id_dhc_idx` (`disease_id_dhc` ASC),"+
-					"INDEX `code_dhc_idx` (`code_dhc` ASC)," +
-					"INDEX `source_id_dhc_idx` (`source_id_dhc` ASC),"+
-					" CONSTRAINT `disease_id_dhc`" +
-					" FOREIGN KEY (`disease_id_dhc`)"+
-					" REFERENCES `diagnostico`.`disease` (`disease_id`)" +
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION," +
-					" CONSTRAINT `code_dhc`" +
-					" FOREIGN KEY (`code_dhc`)"+
-					" REFERENCES `diagnostico`.`code` (`code`)"+
-					" ON DELETE NO ACTION" +
-					" ON UPDATE NO ACTION,"+
-					" CONSTRAINT `source_id_dhc`"+
-					" FOREIGN KEY (`source_id_dhc`)" +
-					" REFERENCES `diagnostico`.`source` (`source_id`)"+
-					" ON DELETE NO ACTION"+
-					" ON UPDATE NO ACTION);";
-			p = connection.prepareStatement(disease_has_code);
+			String disease_has_code = "CREATE TABLE diagnostico.disease_has_code (disease_id INT, code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (disease_id, code, source_id), " +
+					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = conn.prepareStatement(disease_has_code);
 			p.executeUpdate();
 			p.close();	
 
+			
+			//Obtencion de los datos segun DATA
+			
+			LinkedList<String> list = readData();
 
+			String []codVoc = null;
+			LinkedList<String> sourceAnadidos = new LinkedList<String>();
+			LinkedList<String> codeAnadidos = new LinkedList<String>();
+			HashMap<Integer,String> souAnad = new HashMap<Integer,String>();
+			HashMap<String,Integer> souAnadKey = new HashMap<String,Integer>();
+			HashMap<Integer,String> semAdded = new HashMap<Integer,String>();
+			HashMap<String,Integer> semAddedKey = new HashMap<String,Integer>();
+			HashMap<Integer,String> sinAdded = new HashMap<Integer,String>();
+			HashMap<Integer,String> sstAdded = new HashMap<Integer,String>();
+			
+			
+			
+			for(int i=0; i<list.size()-1;i++) {
+				HashMap<Integer,String> dSAdded = new HashMap<Integer,String>();
+				String []enfSint = null;
+				String aDividir = list.get(i);
+				enfSint = aDividir.split("=",2);
 
-			//Obtencion de los datos a traves del archivo DATA
+				String enfermedad=enfSint[0].split(":")[0];
+				PreparedStatement pstenf = conn.prepareCall("INSERT INTO `diagnostico`.`disease` (`disease_id`, `name`) VALUES (?,?);");
+				pstenf.setInt(1, i+1);
+				pstenf.setString(2, enfermedad);
+				pstenf.executeUpdate();
+				pstenf.close();
 
+				String sintomas = enfSint[0].split(":")[1];
+				codVoc = sintomas.split(";");
+				
+				for(int j=0;j<codVoc.length-1;j++){
+
+					String cod = codVoc[j].split("@")[0];
+					String voc = codVoc[j].split("@")[1];
+					if(!sourceAnadidos.contains(voc)) {
+						PreparedStatement pstSource = conn.prepareCall("INSERT INTO `diagnostico`.`source` (`source_id`, `name`) VALUES (?,?);");
+						pstSource.setInt(1, sourceAnadidos.size()+1);
+						pstSource.setString(2, voc);
+						pstSource.executeUpdate();
+						pstSource.close();
+						sourceAnadidos.add(voc);
+						souAnad.put(souAnad.size()+1, voc);
+						souAnadKey.put(voc, souAnad.size());
 						
-						LinkedList<String> list = readData();
-						String []enfermedades;
-						String []codVoc;
-						String []codigo;
-						String[]enfSint;//array de enfermedades y sintomas
-			
-			
-						for (int i = 0; i < list.size(); i++) {
-							enfSint = list.get(i).split("=",2);
-							//COMIENZO PARTE IZQUIERDA ARBOL
-							enfermedades=enfSint[0].split(":");
-							codVoc=enfermedades[1].split(";");
-			
-							for(int j=0;j<codVoc.length;j++){
-								//conseguimos codigos y vocabularios
-								codigo=codVoc[j].split("@");
-							}
-							//FIN PARTE IZQUIERDA ARBOL
-			
-							//COMIENZO PARTE DERECHA ARBOL
-							String [] sintomas;
-							String [] elementos;
-							sintomas = enfSint[1].split(";");
-							for (int j=0; j<sintomas.length;j++){
-								System.out.println(sintomas[j]);
-								elementos= sintomas[j].split(":");
-								
-						}
-							
-							
-			/*
-			 * A la salida de los bucles, los datos se distribuyen:
-			 * 		enfermedades = 	contiene el nombre de todas las enfermedades (0-10 --> 11 enfermedades)
-			 * 		codVoc = 		tiene el codigo y el vocabulario de cada enfermedad.
-			 * 		codigo = 		posiciones pares: codigo
-			 * 				 		posiciones impares: vocabulario
-			 * 		elementos =		(diferencia entre elementos = 3)
-			 * 						contiene el sintoma, su codigo y tipo semantico. 
-			 * 
-			 * Cada iteración ira haciendo esta separaciones por lo que debemos introducir en cada una
-			 * de las tablas los datos necesarios de cada array.
-			 */
+					}
+					
+					if(!codeAnadidos.contains(cod)) {
 
-						}
-			
-			
+						int id = souAnadKey.get(voc);
+						PreparedStatement pstCode = conn.prepareCall("INSERT INTO `diagnostico`.`code` (`code`, `source_id`) VALUES (?,?);");
+						pstCode.setString(1, cod);
+						pstCode.setInt(2, id);
+						pstCode.executeUpdate();
+						pstCode.close();
+						codeAnadidos.add(cod);
+						PreparedStatement pstDHC = conn.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
+						pstDHC.setInt(1, 1);
+						pstDHC.setString(2, cod);
+						pstDHC.setInt(3, id);
+						pstDHC.executeUpdate();
+						pstDHC.close();
+					}
+				}
+				enfSint = aDividir.split("=",2);
+				String []sinCodSem=enfSint[1].split(";");
+
+				
+				for(int k=0;k<sinCodSem.length-1;k++){
+
+					String sin = sinCodSem[k].split(":")[0];
+
+					String cod = sinCodSem[k].split(":")[1];
+
+					String sem = sinCodSem[k].split(":")[2];
+
+					
+
+
+					if(!semAdded.containsValue(sem)) {
+						PreparedStatement pstSem = conn.prepareCall("INSERT INTO `diagnostico`.`semantic_type` (`semantic_type_id`, `cui`) VALUES (?,?);");
+						pstSem.setInt(1, semAdded.size()+1);
+						pstSem.setString(2, sem);
+						pstSem.executeUpdate();
+						pstSem.close();
+						semAdded.put(semAdded.size()+1, sem);
+						semAddedKey.put(sem, semAdded.size());
+						
+					}
+					
+					if(!sinAdded.containsValue(sem)) {
+						PreparedStatement pstSin = conn.prepareCall("INSERT INTO `diagnostico`.`symptom` (`cui`, `name`) VALUES (?,?);");
+						pstSin.setString(1, sem);
+						pstSin.setString(2, sin);
+						pstSin.executeUpdate();
+						pstSin.close();
+						sinAdded.put(sinAdded.size()+1, sem);
+					}
+					if(!sstAdded.containsValue(sem)) {
+					int id = semAddedKey.get(sem);
+					PreparedStatement pstSST = conn.prepareCall("INSERT INTO `diagnostico`.`symptom_semantic_type` (`cui`, `semantic_type_id`) VALUES (?,?);");
+					pstSST.setString(1, sem);
+					pstSST.setInt(2, id);
+					pstSST.executeUpdate();
+					pstSST.close();
+					sstAdded.put(sstAdded.size()+1, sem);
+					}
+					if(!dSAdded.containsValue(sem)) {
+						PreparedStatement pstDS = conn.prepareCall("INSERT INTO `diagnostico`.`disease_symptom` (`disease_id`, `cui`) VALUES (?,?);");
+						pstDS.setInt(1, i+1);
+						pstDS.setString(2, sem);
+						pstDS.executeUpdate();
+						pstDS.close();
+						dSAdded.put(dSAdded.size()+1, sem);
+					}
+				}
+				
+				
+			}
+
 						
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
