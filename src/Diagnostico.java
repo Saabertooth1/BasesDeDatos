@@ -302,15 +302,66 @@ public class Diagnostico {
 
 		private void realizarDiagnostico() {
 		// implementar
-		if (connection == null){
-			conectar();
-		}
+			
+		int option = -1;
+			
+			do {
+				diagnosticoAux();
+				System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir del menú de opciones pulse 0");
+
+				try {
+					Statement st = connection.createStatement();
+					option = readInt();
+
+					switch (option) {
+					
+					default:
+						ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
+								+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+
+						System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+
+						while (rs.next()) {
+							String sintomas = rs.getString("EN.nombre");
+							System.out.println("\t " + sintomas);
+						}
+
+						System.out.println("\n");
+						st.close();
+						break;
+					}
+
+
+				} catch (Exception e) {
+					System.err.println("Opción introducida no válida!");
+				}
+			}
+			while (option != 0);
 	}
 	
 	private void diagnosticoAux(){
 		
-		if (connection == null){
+			if(connection==null){
 			conectar();
+		}
+
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM enfermedad");
+			System.out.println("\n\tEnfermedades: \n");
+
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String nombre = rs.getString("nombre");
+				System.out.println("\tID: " + id + "\tEnfermedad: " + nombre);
+			}
+
+			System.out.println("\n");
+			st.close();
+		}
+
+		catch(Exception e){
+			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
 		}
 		
 	}
@@ -382,6 +433,42 @@ public class Diagnostico {
 	}
 	private void listarEnfermedadesYCodigosAsociados() {
 		// implementar
+		
+		
+		int option = -1;
+		
+		do {
+			enfermedadesAux();
+			System.out.println("\tPor favor, introduzca el ID de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
+
+			try {
+				Statement st = connection.createStatement();
+				option = readInt();
+
+				switch (option) {
+				
+				default:
+					ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
+							+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+
+					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+
+					while (rs.next()) {
+						String sintomas = rs.getString("EN.nombre");
+						System.out.println("\t " + sintomas);
+					}
+
+					System.out.println("\n");
+					st.close();
+					break;
+				}
+
+
+			} catch (Exception e) {
+				System.err.println("Opción introducida no válida!");
+			}
+		}
+		while (option != 0);
 	}
 
 	private void enfermedadesAux(){
@@ -413,6 +500,42 @@ public class Diagnostico {
 
 	private void listarSintomasYTiposSemanticos() {
 		// implementar
+		
+		
+		int option = -1;
+		
+		do {
+			sintomasAux();
+			System.out.println("\tPor favor, introduzca el ID de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
+
+			try {
+				Statement st = connection.createStatement();
+				option = readInt();
+
+				switch (option) {
+				
+				default:
+					ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
+							+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+
+					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+
+					while (rs.next()) {
+						String sintomas = rs.getString("EN.nombre");
+						System.out.println("\t " + sintomas);
+					}
+
+					System.out.println("\n");
+					st.close();
+					break;
+				}
+
+
+			} catch (Exception e) {
+				System.err.println("Opción introducida no válida!");
+			}
+		}
+		while (option != 0);
 	}
 	
 	private void sintomasAux(){
