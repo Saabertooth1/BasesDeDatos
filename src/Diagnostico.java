@@ -356,19 +356,20 @@ public class Diagnostico {
 
 	private void sintomasEnfermedadAux(){
 		
+	
 		if (connection == null){
 			conectar();
 		}
 		
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM medicamento");
-			System.out.println("\n\tMedicamentos: \n");
+			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM enfermedad");
+			System.out.println("\nEnfermedades: \n");
 
 			while (rs.next()) {
 				int id = rs.getInt("id");
 				String nombre = rs.getString("nombre");
-				System.out.println("\tID: " + id + "\tFármaco: " + nombre);
+				System.out.println("\tID: " + id + "\tEnfermedad: " + nombre);
 			}
 
 			System.out.println("\n");
@@ -385,8 +386,27 @@ public class Diagnostico {
 
 	private void enfermedadesAux(){
 		
-		if (connection == null){
+		if(connection==null){
 			conectar();
+		}
+
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM enfermedad");
+			System.out.println("\n\tEnfermedades: \n");
+
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String nombre = rs.getString("nombre");
+				System.out.println("\tID: " + id + "\tEnfermedad: " + nombre);
+			}
+
+			System.out.println("\n");
+			st.close();
+		}
+
+		catch(Exception e){
+			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
 		}
 		
 	}
@@ -397,8 +417,27 @@ public class Diagnostico {
 	
 	private void sintomasAux(){
 		
-		if (connection == null){
+		if(connection==null){
 			conectar();
+		}
+
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM enfermedad");
+			System.out.println("\n\tEnfermedades: \n");
+
+			while (rs.next()) {
+				int id = rs.getInt("id");
+				String nombre = rs.getString("nombre");
+				System.out.println("\tID: " + id + "\tEnfermedad: " + nombre);
+			}
+
+			System.out.println("\n");
+			st.close();
+		}
+
+		catch(Exception e){
+			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
 		}
 		
 	}
