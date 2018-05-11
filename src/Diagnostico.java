@@ -316,35 +316,68 @@ public class Diagnostico {
 		private void realizarDiagnostico() {
 		// implementar
 			
+		if(connection==null) {
+			conectar();
+		}
+			
 		String option = "-1";
 		ArrayList<String> symptoms = new ArrayList<String>();
-		int i = 0;
+		String diseaseId = null;
 			
 			do {
 				diagnosticoAux();
-				System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
-
 				try {
 					Statement st = connection.createStatement();
 					do{
+						System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
 						String symptom = readString();
 						symptoms.add(symptom);
 						System.out.println("Desea añadir más síntomas? Y/N");
 						option = readString();
 					}while (option.equalsIgnoreCase("Y"));
 					
+					String query = "SELECT name FROM disease WHERE ";
 					
-					ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
-							+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
-
-					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
-
-					while (rs.next()) {
-						String enfermedades = rs.getString("EN.nombre");
-						System.out.println("\t " + enfermedades);
+					if (symptoms.size() > 0){
+						for (int i = 0; i < symptoms.size()-1; i++){
+							query = query + "cui = '" + symptoms.get(i) + "' || ";
+						}
+						query = query + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
 					}
+					
+					
+					ResultSet rs = st.executeQuery(query);
+					ArrayList<Integer> aux = new ArrayList<Integer>();
+					while (rs.next()){
+						int id = rs.getInt("disease_id");
+						aux.add(id);
+					}
+					HashMap<Integer, Integer> counter = new HashMap<Integer, Integer>();
+					for (int i = 0; i < aux.size(); i++){
+						int var = 0;
+						if (counter.containsKey(aux.get(i))){
+							var = counter.get(aux.get(i)) + 1;
+							counter.put(i, var);
+						}
+						else{
+							counter.put(aux.get(i), 1);
+						}
+					}
+					Set<Integer> keys = counter.keySet();
+					for (Integer key : keys){
+						if (counter.get(key) == symptoms.size())
+							diseaseId = key.toString();
+						break;
+					}
+					Statement st1 = connection.createStatement();
+					ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE id = " + diseaseId);
 
-					System.out.println("\n");
+					while (rs1.next()) {
+						String disease = rs1.getString("name");
+						System.out.println("\n\tSu diagnóstico es:\n" + disease);
+						
+					}
+					st1.close();
 					st.close();
 					break;
 					
