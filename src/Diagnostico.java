@@ -422,7 +422,7 @@ public class Diagnostico {
 
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  disease_id, name, FROM disease +");
+			ResultSet rs = st.executeQuery("SELECT  disease_id, name FROM disease");
 			//		+ " WHERE EN.id = SIN.id");
 			System.out.println("\n\tEnfermedades: \n");
 
