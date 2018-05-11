@@ -496,6 +496,46 @@ public class Diagnostico {
 
 	private void mostrarEstadisticasBD() {
 		// implementar
+		
+				
+		if(connection==null){
+			conectar();
+		}
+		
+		try{
+			
+			int contadorEnfermedades = 0;
+			String numEnfermedades= "SELECT (disease.disease_id)"
+					+ "FROM Disease;";
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery(numEnfermedades);
+			
+		
+			while(rs.next()) {
+				String numero = rs.getString(1);
+				contadorEnfermedades++;
+			}
+			
+			System.out.println("El numero de enfermedades es: "+ contadorEnfermedades);
+			
+			int contadorSintomas = 0;
+			String numSintomas= "SELECT (symptom.cui)"
+					+ "FROM Symptom;";
+			Statement st1 = connection.createStatement();
+			ResultSet rs1 = st1.executeQuery(numSintomas);
+			
+			while(rs1.next()) {
+				String numero = rs1.getString(1);
+				contadorSintomas++;
+			}
+			
+			System.out.println("El numero de sintomas es: " + contadorSintomas);
+			
+		}
+		catch(SQLException ex){
+			System.err.println(ex.getMessage());
+		}
+		
 	}
 
 
