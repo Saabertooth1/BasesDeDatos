@@ -469,21 +469,20 @@ public class Diagnostico {
 	private void listarSintomasYTiposSemanticos() {
 		// implementar
 		
-		
+	
 		if(connection==null){
 			conectar();
 		}
 
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  EN.id, EN.nombre, SIN.nombre FROM enfermedad EN , sintomas SIN WHERE EN.id = SIN.id");
-			System.out.println("\n\tEnfermedades: \n");
+			ResultSet rs = st.executeQuery("SELECT  cui, name FROM sympton ");
+			System.out.println("\n\tSintomas: \n");
 
 			while (rs.next()) {
-				int id = rs.getInt("EN.id");
-				String nombre = rs.getString("EN.nombre");
-				String sintomas = rs.getString("SIN.nombre");
-				System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n\tSintomas: " + sintomas + "\n");
+				String nombre = rs.getString("name");
+				String sintomas = rs.getString("cui");
+				System.out.println("\n\tSintoma: " + nombre + "\n\tTiposSemanticos: " + sintomas + "\n");
 			}
 
 			st.close();
