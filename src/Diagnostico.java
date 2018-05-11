@@ -1,7 +1,11 @@
 import java.io.InputStreamReader;
 import java.sql.DriverManager;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -86,7 +90,6 @@ public class Diagnostico {
 			String pass = "diagnostico_pwd";
 			String url = "jdbc:mysql://" + serverAddress + "/" + db;
 			connection = DriverManager.getConnection(url, user, pass);
-			System.out.println("Conectado a la base de datos!");
 			connection.setAutoCommit(true);
 			System.out.println("Conectado a la base de datos!");
 		} catch (SQLException esql) {
@@ -102,56 +105,459 @@ public class Diagnostico {
 		}
 	}
 
-	private void crearBD() {
-		// implementar
-		if (connection==null){
-			conectar();
-		}
-
-		for (String aux : readData()) {
-			String[] parts = aux.split("=");
-			String[] nameCode = parts[0].split(":");
-			String name = nameCode[0];
-			String[] codesVoc = nameCode[1].split(";");
-			for (int i = 0; i < codesVoc.length; i++){
-				String[] codeN = codesVoc[i].split("@");
-				String codeDis = codeN[0];
-				String vocDis = codeN[1];
+	private void crearBD() throws Exception {
+		PreparedStatement p = null;
+		try {
+			if(connection==null) {
+				conectar();
 			}
-			String[] sintomas = parts[1].split(";");
-			for (int j = 0; j < sintomas.length; j++){
-				String[] codesSin = sintomas[j].split(":");
-				String sint = codesSin[0];
-				String codeSin = codesSin[1];
-				String semSin = codesSin[2];
+			
+			PreparedStatement pst = connection.prepareStatement("DROP SCHEMA diagnostico;");
+			pst.executeUpdate();
+			PreparedStatement ps = connection.prepareStatement("CREATE SCHEMA diagnostico;");
+			ps.executeUpdate();
+
+			//CREACION DE TABLAS
+
+			// Tabla disease:
+
+			String disease = "CREATE TABLE diagnostico.disease (disease_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			p = connection.prepareStatement(disease);
+			p.executeUpdate();
+			p.close();	
+			
+
+			// Tabla symptom:
+			String symptom ="CREATE TABLE diagnostico.symptom (cui VARCHAR(25) PRIMARY KEY, name VARCHAR(255) UNIQUE)";
+			p = connection.prepareStatement(symptom);
+			p.executeUpdate();
+			p.close();	
+
+			// Tabla source
+			String source = "CREATE TABLE diagnostico.source (source_id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) UNIQUE)";
+			p = connection.prepareStatement(source);
+			p.executeUpdate();
+			p.close();	
+
+			// Tabla code
+			String code="CREATE TABLE diagnostico.code (code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (code, source_id), " +
+					"FOREIGN KEY (source_id) REFERENCES source(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = connection.prepareStatement(code);
+			p.executeUpdate();
+			p.close();	
+
+			// Tabla semantic_type
+			String semantic_type = "CREATE TABLE diagnostico.semantic_type (semantic_type_id INT PRIMARY KEY AUTO_INCREMENT,cui VARCHAR(45) UNIQUE)";
+			p = connection.prepareStatement(semantic_type);
+			p.executeUpdate();
+			p.close();	
+
+			// Tabla symptom_semantic_type
+			String symptom_semantic_type = "CREATE TABLE diagnostico.symptom_semantic_type (cui VARCHAR(25), semantic_type_id INT, " +
+					"PRIMARY KEY (cui, semantic_type_id), " +
+					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (semantic_type_id) REFERENCES semantic_type(semantic_type_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = connection.prepareStatement(symptom_semantic_type);
+			p.executeUpdate();
+			p.close();	
+			
+
+			// Tabla disease_symptom
+			String disease_symptom = "CREATE TABLE diagnostico.disease_symptom (disease_id INT, cui VARCHAR(25)," +
+					"PRIMARY KEY (disease_id, cui)," +
+					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT," +
+					"FOREIGN KEY (cui) REFERENCES symptom(cui) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = connection.prepareStatement(disease_symptom);
+			p.executeUpdate();
+			p.close();	
+
+
+
+			//Tabla disease_has_code
+			String disease_has_code = "CREATE TABLE diagnostico.disease_has_code (disease_id INT, code VARCHAR(255), source_id INT, " +
+					"PRIMARY KEY (disease_id, code, source_id), " +
+					"FOREIGN KEY (disease_id) REFERENCES disease(disease_id) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (code) REFERENCES code(code) ON UPDATE RESTRICT ON DELETE RESTRICT, " +
+					"FOREIGN KEY (source_id) REFERENCES code(source_id) ON UPDATE RESTRICT ON DELETE RESTRICT)";
+			p = connection.prepareStatement(disease_has_code);
+			p.executeUpdate();
+			p.close();	
+
+			
+			//Obtencion de los datos segun DATA
+			
+			LinkedList<String> list = readData();
+
+			String []codVoc = null;
+			LinkedList<String> sourceAnadidos = new LinkedList<String>();
+			LinkedList<String> codeAnadidos = new LinkedList<String>();
+			HashMap<Integer,String> souAnad = new HashMap<Integer,String>();
+			HashMap<String,Integer> souAnadKey = new HashMap<String,Integer>();
+
+			HashMap<Integer,String> semAdded = new HashMap<Integer,String>();
+			HashMap<String,Integer> semAddedKey = new HashMap<String,Integer>();
+			HashMap<Integer,String> sinAdded = new HashMap<Integer,String>();
+			HashMap<Integer,String> sstAdded = new HashMap<Integer,String>();
+			
+			
+			for(int i=0; i<list.size();i++) {
+				HashMap<Integer,String> dSAdded = new HashMap<Integer,String>();
+
+				String []enfSint = null;
+				String aDividir = list.get(i);
+				enfSint = aDividir.split("=",2);
+
+				String enfermedad=enfSint[0].split(":")[0];
+				PreparedStatement pstenf = connection.prepareCall("INSERT INTO `diagnostico`.`disease` (`disease_id`, `name`) VALUES (?,?);");
+				pstenf.setInt(1, i+1);
+				pstenf.setString(2, enfermedad);
+				pstenf.executeUpdate();
+				pstenf.close();
+
+				String sintomas = enfSint[0].split(":")[1];
+				codVoc = sintomas.split(";");
+				
+				for(int j=0;j<codVoc.length-1;j++){
+
+					String cod = codVoc[j].split("@")[0];
+					String voc = codVoc[j].split("@")[1];
+					if(!sourceAnadidos.contains(voc)) {
+						PreparedStatement pstSource = connection.prepareCall("INSERT INTO `diagnostico`.`source` (`source_id`, `name`) VALUES (?,?);");
+						pstSource.setInt(1, sourceAnadidos.size()+1);
+						pstSource.setString(2, voc);
+						pstSource.executeUpdate();
+						pstSource.close();
+						sourceAnadidos.add(voc);
+						souAnad.put(souAnad.size()+1, voc);
+						souAnadKey.put(voc, souAnad.size());
+						
+					}
+					
+					if(!codeAnadidos.contains(cod)) {
+
+						int id = souAnadKey.get(voc);
+						PreparedStatement pstCode = connection.prepareCall("INSERT INTO `diagnostico`.`code` (`code`, `source_id`) VALUES (?,?);");
+						pstCode.setString(1, cod);
+						pstCode.setInt(2, id);
+						pstCode.executeUpdate();
+						pstCode.close();
+						codeAnadidos.add(cod);
+						PreparedStatement pstDHC = connection.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
+						pstDHC.setInt(1, i+1);
+						pstDHC.setString(2, cod);
+						pstDHC.setInt(3, id);
+						pstDHC.executeUpdate();
+						pstDHC.close();
+					}
+				}
+				enfSint = aDividir.split("=",2);
+				String []sinCodSem=enfSint[1].split(";");
+
+				
+				for(int k=0;k<sinCodSem.length-1;k++){
+
+					String sin = sinCodSem[k].split(":")[0];
+
+					String cod = sinCodSem[k].split(":")[1];
+
+					String sem = sinCodSem[k].split(":")[2];
+
+					
+
+
+					if(!semAdded.containsValue(sem)) {
+						PreparedStatement pstSem = connection.prepareCall("INSERT INTO `diagnostico`.`semantic_type` (`semantic_type_id`, `cui`) VALUES (?,?);");
+						pstSem.setInt(1, semAdded.size()+1);
+						pstSem.setString(2, sem);
+						pstSem.executeUpdate();
+						pstSem.close();
+						semAdded.put(semAdded.size()+1, sem);
+						semAddedKey.put(sem, semAdded.size());
+						
+					}
+					
+					if(!sinAdded.containsValue(cod)) {
+						PreparedStatement pstSin = connection.prepareCall("INSERT INTO `diagnostico`.`symptom` (`cui`, `name`) VALUES (?,?);");
+						pstSin.setString(1, cod);
+						pstSin.setString(2, sin);
+						pstSin.executeUpdate();
+						pstSin.close();
+						sinAdded.put(sinAdded.size()+1, cod);
+					}
+					if(!sstAdded.containsValue(cod)) {
+					int id = semAddedKey.get(sem);
+					PreparedStatement pstSST = connection.prepareCall("INSERT INTO `diagnostico`.`symptom_semantic_type` (`cui`, `semantic_type_id`) VALUES (?,?);");
+					pstSST.setString(1, cod);
+					pstSST.setInt(2, id);
+					pstSST.executeUpdate();
+					pstSST.close();
+					sstAdded.put(sstAdded.size()+1, cod);
+					}
+					if(!dSAdded.containsValue(cod)) {
+						PreparedStatement pstDS = connection.prepareCall("INSERT INTO `diagnostico`.`disease_symptom` (`disease_id`, `cui`) VALUES (?,?);");
+						pstDS.setInt(1, i+1);
+						pstDS.setString(2, cod);
+						pstDS.executeUpdate();
+						pstDS.close();
+						dSAdded.put(dSAdded.size()+1, cod);
+					}
+				}
+				
+				
 			}
+
+						
+		}catch(SQLException ex) {
+			System.err.println(ex.getMessage());
 		}
-
-
 	}
 
-	private void realizarDiagnostico() {
+		private void realizarDiagnostico() {
 		// implementar
-		if (connection == null){
-			conectar();
-		}
+			
+		int option = -1;
+			
+			do {
+				diagnosticoAux();
+				System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir del menú de opciones pulse 0");
+
+				try {
+					Statement st = connection.createStatement();
+					option = readInt();
+
+					switch (option) {
+					
+					default:
+						ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
+								+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+
+						System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+
+						while (rs.next()) {
+							String enfermedades = rs.getString("EN.nombre");
+							System.out.println("\t " + enfermedades);
+						}
+
+						System.out.println("\n");
+						st.close();
+						break;
+					}
+
+
+				} catch (Exception e) {
+					System.err.println("Opción introducida no válida!");
+				}
+			}
+			while (option != 0);
 	}
+	
+		private void diagnosticoAux(){
+			if(connection==null){
+				conectar();
+			}
+
+			try{
+				Statement st = connection.createStatement();
+				ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom ");
+				System.out.println("\n\tSintomas: \n");
+
+				while (rs.next()) {
+					String nombre = rs.getString("name");
+					String sintomas = rs.getString("cui");
+					System.out.println("\n\tSintoma: " + nombre + "\n\tTiposSemanticos: " + sintomas + "\n");
+				}
+
+				st.close();
+			}
+			catch(Exception e){
+				System.err.println("Error al seleccionar a la BD: " + e.getMessage());
+			}
+			
+		}
 
 	private void listarSintomasEnfermedad() {
 		// implementar
-	}
+		
+					int option = -1;
+				
+				do {
+					sintomasEnfermedadAux();
+					System.out.println("\tPor favor, introduzca el ID de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
 
+					try {
+							option = readInt();			
+							
+							Statement st = connection.createStatement();
+							ResultSet rs = st.executeQuery("SELECT cui FROM disease_symptom WHERE disease_id=" + option);
+
+							System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+
+							while (rs.next()) {
+								
+								String codigo = rs.getString("cui");
+								Statement st1 = connection.createStatement();
+								ResultSet rs1= st1.executeQuery("SELECT name FROM symptom WHERE cuiin('" + codigo + "')");
+								String sintomas = rs1.getString("name");
+								System.out.println("\t " + sintomas);
+								st1.close();
+							}
+
+							System.out.println("\n");
+							st.close();
+							break;
+
+					} catch (Exception e) {
+						System.err.println("Opción introducida no válida!");
+					}
+				}
+				while (option != 0);
+}
+
+	private void sintomasEnfermedadAux(){
+		
+		if(connection==null){
+			conectar();
+		}
+
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  disease_id, name FROM disease");
+			//		+ " WHERE EN.id = SIN.id");
+			System.out.println("\n\tEnfermedades: \n");
+
+			while (rs.next()) {
+				int id = rs.getInt("disease_id");
+				String nombre = rs.getString("name");
+				System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n");
+			}
+
+			st.close();
+		}
+		catch(Exception e){
+			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
+		}
+	}
+	
 	private void listarEnfermedadesYCodigosAsociados() {
-		// implementar
+		if(connection==null){
+			conectar();
+		}
+
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  disease_id, name FROM disease");
+			System.out.println("\n\tEnfermedades:");
+
+			while (rs.next()) {
+				int id = rs.getInt("disease_id");
+				String nombre = rs.getString("name");
+				Statement st1 = connection.createStatement();
+				ResultSet rs1 = st1.executeQuery("SELECT code, source_id FROM disease_has_code WHERE disease_id = " + id);
+				System.out.println("\n\tEnfermedad: " + nombre);
+				while (rs1.next()){
+					String codigo = rs1.getString("code");
+					int sourceid = rs1.getInt("source_id"); 
+					Statement st2 = connection.createStatement();
+					ResultSet rs2 = st2.executeQuery("SELECT name FROM diagnostico.source WHERE source_id = " + sourceid);
+					while (rs2.next()){
+						System.out.println("\t\tCódigo: " + codigo + " - " + rs2.getString("name"));
+					}
+					st2.close();
+				}
+				st1.close();
+			}
+
+			st.close();
+		}
+		catch(Exception e){
+			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
+		}
 	}
 
 	private void listarSintomasYTiposSemanticos() {
 		// implementar
+		
+
+				if(connection==null){
+					conectar();
+				}
+
+				try{
+					Statement st = connection.createStatement();
+					ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom");
+					
+					while (rs.next()) {
+						String cuiSintomas = rs.getString("cui");
+						String nombre = rs.getString("name");
+						
+						Statement st1 = connection.createStatement();
+						ResultSet rs1 = st1.executeQuery("SELECT  semantic_type_id FROM symptom_semantic_type WHERE cui in('" + cuiSintomas + "')");
+						while (rs1.next()){
+							int idTipoSemantico = rs1.getInt("semantic_type_id");
+							
+							Statement st2 = connection.createStatement();
+							ResultSet rs2 = st2.executeQuery("SELECT  cui FROM semantic_type WHERE semantic_type_id="+idTipoSemantico);
+							while(rs2.next()){
+								String tipoSemantico = rs2.getString("cui");
+								
+								System.out.println("\n\tSintoma: " + nombre + "\n\t Tipo semantico: " + tipoSemantico);
+							}
+							st2.close();
+						}
+						st1.close();
+					}
+					st.close();
+				}
+				catch(Exception e){
+					System.err.println("Error al seleccionar a la BD: " + e.getMessage());
+				}
 	}
 
 	private void mostrarEstadisticasBD() {
 		// implementar
+		
+		
+				if(connection==null){
+					conectar();
+				}
+				
+				try{
+					
+					int contadorEnfermedades = 0;
+					String numEnfermedades= "SELECT (disease.disease_id)"
+							+ "FROM Disease;";
+					Statement st = connection.createStatement();
+					ResultSet rs = st.executeQuery(numEnfermedades);
+					
+				
+					while(rs.next()) {
+						String numero = rs.getString(1);
+						contadorEnfermedades++;
+					}
+					
+					System.out.println("El numero de enfermedades es: "+ contadorEnfermedades);
+					st.close();
+					
+					int contadorSintomas = 0;
+					String numSintomas= "SELECT (symptom.cui)"
+							+ "FROM Symptom;";
+					Statement st1 = connection.createStatement();
+					ResultSet rs1 = st1.executeQuery(numSintomas);
+					
+					while(rs1.next()) {
+						String numero = rs1.getString(1);
+						contadorSintomas++;
+					}
+					
+					System.out.println("El numero de sintomas es: " + contadorSintomas);
+					st1.close();
+				}
+				catch(SQLException ex){
+					System.err.println(ex.getMessage());
+				}
 	}
+
 
 	/**
 	 * M�todo para leer n�meros enteros de teclado.
