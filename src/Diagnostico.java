@@ -314,91 +314,97 @@ public class Diagnostico {
 	}
 
 		private void realizarDiagnostico() {
-		if(connection==null) {
-			conectar();
-		}
-			
-		String option = "-1";
-		ArrayList<String> symptoms = new ArrayList<String>();
-		String diseaseId = null;
-			
-			do {
-				diagnosticoAux();
-				try {
-					Statement st = connection.createStatement();
-					do{
-						System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
-						String symptom = readString();
-						symptoms.add(symptom);
-						System.out.println("Desea añadir más síntomas? Y/N");
-						option = readString();
-					}while (option.equalsIgnoreCase("Y"));
-					
-					String query = "SELECT disease_id FROM disease_symptom WHERE ";
-					String queryLong = "";
-					
-					if (symptoms.size() > 0){
-						for (int i = 0; i < symptoms.size()-1; i++){
-							queryLong = queryLong + "cui = '" + symptoms.get(i) + "' || ";
-						}
-						queryLong = queryLong + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
-					}
-					query = query + queryLong;
-					System.out.println(query);
-					
-					
-					ResultSet rs = st.executeQuery(query);
-					ArrayList<Integer> aux = new ArrayList<Integer>();
-					while (rs.next()){
-						int id = rs.getInt("disease_id");
-						aux.add(id);
-					}
-						int cuenta = 0;
-						
-						ArrayList<Integer> resultados = new ArrayList<Integer>();
-						
-						for(int m = 0; m < aux.size(); m++){
-							for(int n = m; n < aux.size(); n++){
-								
-								if(aux.get(m).equals(aux.get(n))){
-									
-									cuenta++;
-									
-								}
-								
-								if(cuenta == symptoms.size()-1){
-									
-									resultados.add(aux.get(m));
-									
-								}
-								
-							}
-						
-						}
-											
-						Statement st1 = connection.createStatement();
-						ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE id = " + resultados.get(0));
-
-					while (rs1.next()) {
-						String disease = rs1.getString("name");
-						System.out.println("\n\tSu diagnóstico es:\n" + disease);
-						
-					}
-					st1.close();
-					st.close();
-					break;
-					
-
-
-				} catch (Exception e) {
-					System.err.println("Opción introducida no válida!");
-				}
+		// implementar
+			if(connection==null) {
+				conectar();
 			}
-			while (!option.equals("0"));
+				
+			String option = "-1";
+			ArrayList<String> symptoms = new ArrayList<String>();
+			String diseaseId = null;
+			diagnosticoAux();
+				do {
+					try {
+						Statement st = connection.createStatement();
+						do{
+							System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
+							String symptom = readString();
+							symptoms.add(symptom);
+							System.out.println("Desea añadir más síntomas? Y/N");
+							option = readString();
+						}while (option.equalsIgnoreCase("Y"));
+						
+						String query = "SELECT disease_id FROM disease_symptom WHERE ";
+						String queryLong = "";
+						
+						if (symptoms.size() > 0){
+							for (int i = 0; i < symptoms.size()-1; i++){
+								queryLong = queryLong + "cui = '" + symptoms.get(i) + "' || ";
+							}
+							queryLong = queryLong + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
+						}
+						query = query + queryLong;
+						
+						
+						ResultSet rs = st.executeQuery(query);
+						ArrayList<Integer> aux = new ArrayList<Integer>();
+						boolean encontrado = false;
+						while (rs.next()){
+							int id = rs.getInt("disease_id");
+							aux.add(id);
+						}
+							
+							
+							ArrayList<Integer> resultados = new ArrayList<Integer>();
+							
+							for(int m = 0; m < aux.size()-1; m++){
+								int cuenta = 0;
+								for(int n = m; n < aux.size()-1; n++){
+									
+									if(aux.get(m).equals(aux.get(n))){
+										
+										cuenta++;
+										
+									}
+									
+									if(cuenta == symptoms.size()){
+										cuenta = 0;
+										resultados.add(aux.get(m));
+										encontrado = true;
+										
+									}
+									
+								}
+							
+							}
+							if (!encontrado){
+								System.out.println("No se ha encontrado ninguna enfermedad con esos síntomas");
+							}
+							else{
+								System.out.println("\n\tSu diagnóstico es:");
+								for (int i = 0; i < resultados.size(); i++){
+									Statement st1 = connection.createStatement();
+									ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE disease_id = " + resultados.get(i) );
+									while (rs1.next()){
+										System.out.println("\t" + rs1.getString("name") + "\n");
+								    }
+								st1.close();
+							}
+							}
+						st.close();
+						break;
+						
+
+
+					} catch (Exception e) {
+						System.err.println("Opción introducida no válida!");
+					}
+				}
+				while (!option.equals("0"));
 	}
 	
 		private void diagnosticoAux(){
-			if(connection==null){
+			if(connection==null) {
 				conectar();
 			}
 
