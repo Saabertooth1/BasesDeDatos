@@ -353,25 +353,31 @@ public class Diagnostico {
 						int id = rs.getInt("disease_id");
 						aux.add(id);
 					}
-					HashMap<Integer, Integer> counter = new HashMap<Integer, Integer>();
-					for (int i = 0; i < aux.size(); i++){
-						int var = 0;
-						if (counter.containsKey(aux.get(i))){
-							var = counter.get(aux.get(i)) + 1;
-							counter.put(i, var);
+						int cuenta = 0;
+						
+						ArrayList<Integer> resultados = new ArrayList<Integer>();
+						
+						for(int m = 0; m < aux.size(); m++){
+							for(int n = m; n < aux.size(); n++){
+								
+								if(aux.get(m).equals(aux.get(n))){
+									
+									cuenta++;
+									
+								}
+								
+								if(cuenta == symptoms.size()-1){
+									
+									resultados.add(aux.get(m));
+									
+								}
+								
+							}
+						
 						}
-						else{
-							counter.put(aux.get(i), 1);
-						}
-					}
-					Set<Integer> keys = counter.keySet();
-					for (Integer key : keys){
-						if (counter.get(key) == symptoms.size())
-							diseaseId = key.toString();
-						break;
-					}
-					Statement st1 = connection.createStatement();
-					ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE disease_id = " + diseaseId);
+											
+						Statement st1 = connection.createStatement();
+						ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE id = " + resultados.get(0));
 
 					while (rs1.next()) {
 						String disease = rs1.getString("name");
