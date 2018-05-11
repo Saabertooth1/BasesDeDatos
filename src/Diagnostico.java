@@ -216,7 +216,7 @@ public class Diagnostico {
 				String sintomas = enfSint[0].split(":")[1];
 				codVoc = sintomas.split(";");
 				
-				for(int j=0;j<codVoc.length-1;j++){
+				for(int j=0;j<codVoc.length;j++){
 
 					String cod = codVoc[j].split("@")[0];
 					String voc = codVoc[j].split("@")[1];
@@ -241,19 +241,20 @@ public class Diagnostico {
 						pstCode.executeUpdate();
 						pstCode.close();
 						codeAnadidos.add(cod);
-						PreparedStatement pstDHC = conn.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
-						pstDHC.setInt(1, i+1);
-						pstDHC.setString(2, cod);
-						pstDHC.setInt(3, id);
-						pstDHC.executeUpdate();
-						pstDHC.close();
+
 					}
+					PreparedStatement pstDHC = conn.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
+					pstDHC.setInt(1, i+1);
+					pstDHC.setString(2, cod);
+					pstDHC.setInt(3, souAnadKey.get(voc));
+					pstDHC.executeUpdate();
+					pstDHC.close();
 				}
 				enfSint = aDividir.split("=",2);
 				String []sinCodSem=enfSint[1].split(";");
 
 				
-				for(int k=0;k<sinCodSem.length-1;k++){
+				for(int k=0;k<sinCodSem.length;k++){
 
 					String sin = sinCodSem[k].split(":")[0];
 
@@ -292,14 +293,14 @@ public class Diagnostico {
 					pstSST.close();
 					sstAdded.put(sstAdded.size()+1, cod);
 					}
-					if(!dSAdded.containsValue(cod)) {
+
 						PreparedStatement pstDS = conn.prepareCall("INSERT INTO `diagnostico`.`disease_symptom` (`disease_id`, `cui`) VALUES (?,?);");
 						pstDS.setInt(1, i+1);
 						pstDS.setString(2, cod);
 						pstDS.executeUpdate();
 						pstDS.close();
 						dSAdded.put(dSAdded.size()+1, cod);
-					}
+					
 				}
 				
 				
@@ -309,6 +310,7 @@ public class Diagnostico {
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
+
 	}
 
 		private void realizarDiagnostico() {
