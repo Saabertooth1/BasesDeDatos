@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -86,8 +88,8 @@ public class Diagnostico {
 			Class.forName(drv);
 			String serverAddress = "localhost:3306";
 			String db = "diagnostico";
-			String user = "diagnostico";
-			String pass = "diagnostico_pwd";
+			String user = "bddx";
+			String pass = "bddx_pwd";
 			String url = "jdbc:mysql://" + serverAddress + "/" + db;
 			connection = DriverManager.getConnection(url, user, pass);
 			connection.setAutoCommit(true);
@@ -218,7 +220,7 @@ public class Diagnostico {
 				String sintomas = enfSint[0].split(":")[1];
 				codVoc = sintomas.split(";");
 				
-				for(int j=0;j<codVoc.length-1;j++){
+				for(int j=0;j<codVoc.length;j++){
 
 					String cod = codVoc[j].split("@")[0];
 					String voc = codVoc[j].split("@")[1];
@@ -243,19 +245,20 @@ public class Diagnostico {
 						pstCode.executeUpdate();
 						pstCode.close();
 						codeAnadidos.add(cod);
-						PreparedStatement pstDHC = connection.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
-						pstDHC.setInt(1, i+1);
-						pstDHC.setString(2, cod);
-						pstDHC.setInt(3, id);
-						pstDHC.executeUpdate();
-						pstDHC.close();
+
 					}
+					PreparedStatement pstDHC = connection.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
+					pstDHC.setInt(1, i+1);
+					pstDHC.setString(2, cod);
+					pstDHC.setInt(3, souAnadKey.get(voc));
+					pstDHC.executeUpdate();
+					pstDHC.close();
 				}
 				enfSint = aDividir.split("=",2);
 				String []sinCodSem=enfSint[1].split(";");
 
 				
-				for(int k=0;k<sinCodSem.length-1;k++){
+				for(int k=0;k<sinCodSem.length;k++){
 
 					String sin = sinCodSem[k].split(":")[0];
 
@@ -294,66 +297,119 @@ public class Diagnostico {
 					pstSST.close();
 					sstAdded.put(sstAdded.size()+1, cod);
 					}
-					if(!dSAdded.containsValue(cod)) {
+
 						PreparedStatement pstDS = connection.prepareCall("INSERT INTO `diagnostico`.`disease_symptom` (`disease_id`, `cui`) VALUES (?,?);");
 						pstDS.setInt(1, i+1);
 						pstDS.setString(2, cod);
 						pstDS.executeUpdate();
 						pstDS.close();
 						dSAdded.put(dSAdded.size()+1, cod);
-					}
+					
 				}
 				
 				
 			}
-
+			connection.close();
+			conectar();
 						
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
+
 	}
 
 		private void realizarDiagnostico() {
 		// implementar
-			
-		int option = -1;
-			
-			do {
-				diagnosticoAux();
-				System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir del menú de opciones pulse 0");
-
-				try {
-					Statement st = connection.createStatement();
-					option = readInt();
-
-					switch (option) {
-					
-					default:
-						ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
-								+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
-
-						System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
-
-						while (rs.next()) {
-							String enfermedades = rs.getString("EN.nombre");
-							System.out.println("\t " + enfermedades);
+			if(connection==null) {
+				conectar();
+			}
+				
+			String option = "-1";
+			ArrayList<String> symptoms = new ArrayList<String>();
+			//String diseaseId = null;
+			diagnosticoAux();
+				do {
+					try {
+						Statement st = connection.createStatement();
+						do{
+							System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
+							String symptom = readString();
+							symptoms.add(symptom);
+							System.out.println("Desea añadir más síntomas? Y/N");
+							option = readString();
+						}while (option.equalsIgnoreCase("Y"));
+						
+						String query = "SELECT disease_id FROM disease_symptom WHERE ";
+						String queryLong = "";
+						
+						if (symptoms.size() > 0){
+							for (int i = 0; i < symptoms.size()-1; i++){
+								queryLong = queryLong + "cui = '" + symptoms.get(i) + "' || ";
+							}
+							queryLong = queryLong + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
 						}
-
-						System.out.println("\n");
+						query = query + queryLong;
+						
+						
+						ResultSet rs = st.executeQuery(query);
+						ArrayList<Integer> aux = new ArrayList<Integer>();
+						boolean encontrado = false;
+						while (rs.next()){
+							int id = rs.getInt("disease_id");
+							aux.add(id);
+						}
+							
+							
+							ArrayList<Integer> resultados = new ArrayList<Integer>();
+							
+							for(int m = 0; m < aux.size()-1; m++){
+								int cuenta = 0;
+								for(int n = m; n < aux.size()-1; n++){
+									
+									if(aux.get(m).equals(aux.get(n))){
+										
+										cuenta++;
+										
+									}
+									
+									if(cuenta == symptoms.size()){
+										cuenta = 0;
+										resultados.add(aux.get(m));
+										encontrado = true;
+										
+									}
+									
+								}
+							
+							}
+							if (!encontrado){
+								System.out.println("No se ha encontrado ninguna enfermedad con esos síntomas");
+							}
+							else{
+								System.out.println("\n\tSu diagnóstico es:");
+								for (int i = 0; i < resultados.size(); i++){
+									Statement st1 = connection.createStatement();
+									ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE disease_id = " + resultados.get(i) );
+									while (rs1.next()){
+										System.out.println("\t" + rs1.getString("name") + "\n");
+								    }
+								st1.close();
+							}
+							}
 						st.close();
 						break;
+						
+
+
+					} catch (Exception e) {
+						System.err.println("Opción introducida no válida!");
 					}
-
-
-				} catch (Exception e) {
-					System.err.println("Opción introducida no válida!");
 				}
-			}
-			while (option != 0);
+				while (!option.equals("0"));
 	}
 	
 		private void diagnosticoAux(){
-			if(connection==null){
+			if(connection==null) {
 				conectar();
 			}
 
@@ -376,35 +432,48 @@ public class Diagnostico {
 			
 		}
 
-	private void listarSintomasEnfermedad() {
+	private void listarSintomasEnfermedad() throws Exception {
 		// implementar
-		
-					int option = -1;
+		if(connection==null) {
+			conectar();
+		}
+				int option = -1;
 				
 				do {
-					sintomasEnfermedadAux();
+					Statement st = connection.createStatement();
+					ResultSet rs = st.executeQuery("SELECT  disease_id, name FROM disease");
+					//		+ " WHERE EN.id = SIN.id");
+					System.out.println("\n\tEnfermedades: \n");
+
+					while (rs.next()) {
+						int id = rs.getInt("disease_id");
+						String nombre = rs.getString("name");
+						System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n");
+					}
+					st.close();
 					System.out.println("\tPor favor, introduzca el ID de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
 
 					try {
-							option = readInt();			
+							int entrada = readInt();
 							
-							Statement st = connection.createStatement();
-							ResultSet rs = st.executeQuery("SELECT cui FROM disease_symptom WHERE disease_id=" + option);
+							Statement st1 = connection.createStatement();
+							ResultSet rs1 = st1.executeQuery("SELECT cui FROM disease_symptom WHERE disease_id=" + entrada);
 
 							System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
 
-							while (rs.next()) {
-								
-								String codigo = rs.getString("cui");
-								Statement st1 = connection.createStatement();
-								ResultSet rs1= st1.executeQuery("SELECT name FROM symptom WHERE cuiin('" + codigo + "')");
-								String sintomas = rs1.getString("name");
-								System.out.println("\t " + sintomas);
-								st1.close();
+							while (rs1.next()) {								
+								String codigo = rs1.getString("cui");
+								Statement st2 = connection.createStatement();
+								ResultSet rs2= st2.executeQuery("SELECT name FROM symptom WHERE cui in('" + codigo + "')");
+								while(rs2.next()){
+									String sintomas = rs2.getString("name");
+									System.out.println("\t " + sintomas);
+								}
+								st2.close();
 							}
 
 							System.out.println("\n");
-							st.close();
+							st1.close();
 							break;
 
 					} catch (Exception e) {
@@ -414,30 +483,6 @@ public class Diagnostico {
 				while (option != 0);
 }
 
-	private void sintomasEnfermedadAux(){
-		
-		if(connection==null){
-			conectar();
-		}
-
-		try{
-			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  disease_id, name FROM disease");
-			//		+ " WHERE EN.id = SIN.id");
-			System.out.println("\n\tEnfermedades: \n");
-
-			while (rs.next()) {
-				int id = rs.getInt("disease_id");
-				String nombre = rs.getString("name");
-				System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n");
-			}
-
-			st.close();
-		}
-		catch(Exception e){
-			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
-		}
-	}
 	
 	private void listarEnfermedadesYCodigosAsociados() {
 		if(connection==null){
@@ -479,9 +524,9 @@ public class Diagnostico {
 		// implementar
 		
 
-				if(connection==null){
-					conectar();
-				}
+			if(connection==null){
+				conectar();
+			}
 
 				try{
 					Statement st = connection.createStatement();
@@ -516,46 +561,122 @@ public class Diagnostico {
 
 	private void mostrarEstadisticasBD() {
 		// implementar
-		
-		
-				if(connection==null){
-					conectar();
+		try {
+			if(connection==null)
+				conectar();
+
+			PreparedStatement pst = connection.prepareStatement("SELECT count(*) FROM diagnostico.disease ");
+			ResultSet rs = pst.executeQuery();
+			if(rs.next())
+				System.out.println("El numero de enfermedades es: "+ rs.getInt("count(*)")+"\n");
+
+			PreparedStatement pst1 = connection.prepareStatement("SELECT count(*) FROM diagnostico.symptom ");
+			ResultSet rs1 = pst1.executeQuery();
+			if(rs1.next())
+				System.out.println("El numero de sintomas es: " + rs1.getInt("count(*)")+"\n");
+
+			
+			int masSin = 0;
+			int id = 0;
+			for(int i=1; i<12; i++) {
+				PreparedStatement pst2 = connection.prepareStatement("SELECT count(*) FROM diagnostico.disease_symptom WHERE disease_id = ?;");
+				pst2.setInt(1, i);
+				ResultSet rs2 = pst2.executeQuery();
+				if(rs2.next()) {
+				if(rs2.getInt("count(*)")>masSin) {
+					masSin=rs2.getInt("count(*)");
+					id=i;
+				}
+				}
+
+			}
+			PreparedStatement pst3 = connection.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?; ");
+			pst3.setInt(1, id);
+			ResultSet rs3 = pst3.executeQuery();
+			if(rs3.next())
+				System.out.println("La enfermedad con mas sintomas es: "+ rs3.getString("name")+"\n");
+
+
+
+			int menSin = 1000;
+			int idMen = 0;
+			for(int i=1; i<12; i++) {
+				PreparedStatement pst4 = connection.prepareStatement("SELECT count(*) FROM diagnostico.disease_symptom WHERE disease_id = ?;");
+				pst4.setInt(1, i);
+				ResultSet rs4 = pst4.executeQuery();
+				if(rs4.next()) {
+				if(rs4.getInt("count(*)")<menSin) {
+					menSin=rs4.getInt("count(*)");
+					idMen=i;
+				}
+				}
+
+			}
+			PreparedStatement pst5 = connection.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?; ");
+			pst5.setInt(1, idMen);
+			ResultSet rs5 = pst5.executeQuery();
+			if(rs5.next())
+				System.out.println("La enfermedad con menos sintomas es: "+rs5.getString("name")+"\n");
+
+			
+			int nSem =0;
+			PreparedStatement pst6 = connection.prepareStatement("SELECT count(*) FROM diagnostico.semantic_type ");
+			ResultSet rs6 = pst6.executeQuery();
+			if(rs6.next())
+				nSem=rs6.getInt("count(*)");
+			for(int i=1; i<nSem+1;i++) {
+				
+				Hashtable<Integer,String> disId = new Hashtable<Integer,String>();
+				PreparedStatement pst8 = connection.prepareStatement("SELECT * FROM diagnostico.symptom_semantic_type WHERE semantic_type_id = ?; ");
+				pst8.setInt(1, i);
+				ResultSet rs8 = pst8.executeQuery();
+				int k=0;
+				while(rs8.next()) {
+					String cui = rs8.getString("cui");
+					PreparedStatement pst11 = connection.prepareStatement("SELECT * FROM diagnostico.symptom WHERE cui = ?; ");
+					pst11.setString(1, cui);
+					ResultSet rs11 = pst11.executeQuery();
+					String dId=null;
+					if(rs11.next())
+						dId = rs11.getString("name");
+					disId.put(k, dId);
+					k++;
 				}
 				
-				try{
-					
-					int contadorEnfermedades = 0;
-					String numEnfermedades= "SELECT (disease.disease_id)"
-							+ "FROM Disease;";
-					Statement st = connection.createStatement();
-					ResultSet rs = st.executeQuery(numEnfermedades);
-					
+				PreparedStatement pst7 = connection.prepareStatement("SELECT * FROM diagnostico.semantic_type WHERE semantic_type_id = ?; ");
+				pst7.setInt(1, i);
+				ResultSet rs7 = pst7.executeQuery();
+				String j=null;
+				if(rs7.next())
+					j=rs7.getString("cui");
+			
+
+
 				
-					while(rs.next()) {
-						String numero = rs.getString(1);
-						contadorEnfermedades++;
-					}
+				System.out.println("Tipo Semantico: "+j + ", Sintomas asociados: "+disId.values()+"\n" );
+			}
+				System.out.println("El numero total de Tipos Semanticos es: "+nSem+"\n" );
+
+
+				int total = 0;
+				int media = 0;
+				for (int i=1; i<12;i++) {
+					PreparedStatement pst10 = connection.prepareStatement("SELECT count(*) FROM diagnostico.disease_has_code WHERE disease_id = ?; ");
+					pst10.setInt(1, i);
+					ResultSet rs10 = pst10.executeQuery();
+					if(rs10.next())
+						total+=rs10.getInt("count(*)");
 					
-					System.out.println("El numero de enfermedades es: "+ contadorEnfermedades);
-					st.close();
-					
-					int contadorSintomas = 0;
-					String numSintomas= "SELECT (symptom.cui)"
-							+ "FROM Symptom;";
-					Statement st1 = connection.createStatement();
-					ResultSet rs1 = st1.executeQuery(numSintomas);
-					
-					while(rs1.next()) {
-						String numero = rs1.getString(1);
-						contadorSintomas++;
-					}
-					
-					System.out.println("El numero de sintomas es: " + contadorSintomas);
-					st1.close();
 				}
-				catch(SQLException ex){
-					System.err.println(ex.getMessage());
-				}
+				media = total/11;
+
+			System.out.println("El numero medio de sintomas: "+media+"\n");
+			
+			
+		}
+		catch(SQLException ex){
+			System.err.println(ex.getMessage());
+		}
 	}
 
 
