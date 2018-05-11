@@ -379,22 +379,17 @@ public class Diagnostico {
 	private void listarSintomasEnfermedad() {
 		// implementar
 		
-		
-		int option = -1;
+			int option = -1;
 		
 		do {
 			sintomasEnfermedadAux();
 			System.out.println("\tPor favor, introduzca el ID de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
 
 			try {
-				Statement st = connection.createStatement();
-				option = readInt();
-
-				switch (option) {
-				
-				default:
+					option = readInt();			
 					
-					ResultSet rs = st.executeQuery("SELECT cui FROM disease_symptom WHERE disease_id=" +option);
+					Statement st = connection.createStatement();
+					ResultSet rs = st.executeQuery("SELECT cui FROM disease_symptom WHERE disease_id=" + option);
 
 					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
 
@@ -410,8 +405,6 @@ public class Diagnostico {
 					System.out.println("\n");
 					st.close();
 					break;
-				}
-
 
 			} catch (Exception e) {
 				System.err.println("Opción introducida no válida!");
