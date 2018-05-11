@@ -480,10 +480,7 @@ public class Diagnostico {
 		}
 	}
 	
-		private void listarSintomasYTiposSemanticos() {
-		// implementar
-		
-
+	private void listarSintomasYTiposSemanticos() {
 		if(connection==null){
 			conectar();
 		}
@@ -491,24 +488,27 @@ public class Diagnostico {
 		try{
 			Statement st = connection.createStatement();
 			ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom");
-			
+					
 			while (rs.next()) {
 				String cuiSintomas = rs.getString("cui");
 				String nombre = rs.getString("name");
-				
+						
 				Statement st1 = connection.createStatement();
-				ResultSet rs1 = st.executeQuery("SELECT  semantic_type_id FROM symptom_semantic_type WHERE cui="+cuiSintomas);
-				
-				int idTipoSemantico = rs1.getInt("semantic_type_id");
-				
-				Statement st2 = connection.createStatement();
-				ResultSet rs2 = st.executeQuery("SELECT  cui FROM semantic_type WHERE semantic_type_id="+idTipoSemantico);
-				
-				String tipoSemantico = rs2.getString("cui");
-				
-				System.out.println("\n\tSintoma: " + nombre + "\n\t Tipo semantico: " + tipoSemantico + "\n");
+				ResultSet rs1 = st1.executeQuery("SELECT  semantic_type_id FROM symptom_semantic_type WHERE cui in('" + cuiSintomas + "')");
+				while (rs1.next()){
+					int idTipoSemantico = rs1.getInt("semantic_type_id");
+							
+					Statement st2 = connection.createStatement();
+					ResultSet rs2 = st2.executeQuery("SELECT  cui FROM semantic_type WHERE semantic_type_id="+idTipoSemantico);
+					while(rs2.next()){
+						String tipoSemantico = rs2.getString("cui");
+								
+						System.out.println("\n\tSintoma: " + nombre + "\n\t Tipo semantico: " + tipoSemantico + "\n");
+						st2.close();
+					}
+				}
+				st1.close();
 			}
-
 			st.close();
 		}
 		catch(Exception e){
