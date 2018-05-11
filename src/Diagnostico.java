@@ -312,83 +312,94 @@ public class Diagnostico {
 		}
 
 	}
-
-		private void realizarDiagnostico() {
-		if(connection==null) {
-			conectar();
-		}
-			
-		String option = "-1";
-		ArrayList<String> symptoms = new ArrayList<String>();
-		String diseaseId = null;
-			
-			do {
-				diagnosticoAux();
-				try {
-					Statement st = connection.createStatement();
-					do{
-						System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
-						String symptom = readString();
-						symptoms.add(symptom);
-						System.out.println("Desea añadir más síntomas? Y/N");
-						option = readString();
-					}while (option.equalsIgnoreCase("Y"));
-					
-					String query = "SELECT disease_id FROM disease_symptom WHERE ";
-					String queryLong = "";
-					
-					if (symptoms.size() > 0){
-						for (int i = 0; i < symptoms.size()-1; i++){
-							queryLong = queryLong + "cui = '" + symptoms.get(i) + "' || ";
-						}
-						queryLong = queryLong + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
-					}
-					query = query + queryLong;
-					System.out.println(query);
-					
-					
-					ResultSet rs = st.executeQuery(query);
-					ArrayList<Integer> aux = new ArrayList<Integer>();
-					while (rs.next()){
-						int id = rs.getInt("disease_id");
-						aux.add(id);
-					}
-					HashMap<Integer, Integer> counter = new HashMap<Integer, Integer>();
-					for (int i = 0; i < aux.size(); i++){
-						int var = 0;
-						if (counter.containsKey(aux.get(i))){
-							var = counter.get(aux.get(i)) + 1;
-							counter.put(i, var);
-						}
-						else{
-							counter.put(aux.get(i), 1);
-						}
-					}
-					Set<Integer> keys = counter.keySet();
-					for (Integer key : keys){
-						if (counter.get(key) == symptoms.size())
-							diseaseId = key.toString();
-						break;
-					}
-					Statement st1 = connection.createStatement();
-					ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE disease_id = " + diseaseId);
-
-					while (rs1.next()) {
-						String disease = rs1.getString("name");
-						System.out.println("\n\tSu diagnóstico es:\n" + disease);
-						
-					}
-					st1.close();
-					st.close();
-					break;
-					
-
-
-				} catch (Exception e) {
-					System.err.println("Opción introducida no válida!");
+		private int contador(ArrayList<Integer> array) {
+		int id = 0;
+		int cont = 0;
+		
+		for (int i = 1; i<12; i++) {
+			int contAux = 0;
+			for(int j=0; j<array.size(); j++) {
+				if(array.get(j) == i) {
+					contAux++;
 				}
 			}
-			while (!option.equals("0"));
+			if(contAux>cont) {
+				id=i;
+				cont=contAux;
+			}
+		}
+		return id;
+	}
+
+		private void realizarDiagnostico() {
+				if(conn==null) {
+			conectar();
+		}
+		//listarSintomasCui();
+		ArrayList<String> sintomas = new ArrayList<>();
+		System.out.println("Ingrese cod_sintoma: ");
+		
+
+		for(int i = 0; i < 6; i++) {
+			String entrada = readString();
+			sintomas.add(entrada);
+			System.out.print("Ingresar otro sintoma?[s/n]");
+			entrada = readString();
+
+			if(!entrada.equals("n") && !entrada.equals("s")) {
+				System.out.println("Error, introduce de nuevo el sintoma");
+				boolean correcto = false;
+				while (!correcto){
+					System.out.print("[s/n]");
+					entrada = readString();
+					if(!entrada.equals("n") && !entrada.equals("s"))
+						correcto = false;
+					else
+						correcto = true;
+				}
+
+				i--;
+
+			}
+			if(entrada.equals("n")) {
+				n++;
+				break;
+			}
+			else {
+				n++;
+			}	
+
+		}
+
+		String where = "WHERE cui = "+"'"+sintomas.get(0)+"'";
+		for (int i = 1; i<sintomas.size();i++) {
+			where+="|| cui = "+"'"+sintomas.get(i)+"'";
+		}
+
+		ArrayList<Integer> cont = new ArrayList<Integer>();
+		String sql = "SELECT * FROM diagnostico.disease_symptom "+where+";";
+
+		PreparedStatement pst1 = conn.prepareStatement(sql);
+		ResultSet rs1 = pst1.executeQuery();
+		while(rs1.next()) {
+			cont.add(rs1.getInt("disease_id"));
+		}
+		
+		int id = contador(cont);
+		PreparedStatement pst2 = conn.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?;");
+		pst2.setInt(1, id);
+		ResultSet rs2 = pst2.executeQuery();
+		String enfermedad = "no hay coincidencias";
+		if(rs2.next())
+			enfermedad=rs2.getString("name");
+
+		
+		
+		
+		
+		
+		
+		System.out.println("Gracias, aquí tiene su diagnóstico: "+enfermedad);
 	}
 	
 		private void diagnosticoAux(){
