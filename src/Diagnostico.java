@@ -351,25 +351,23 @@ public class Diagnostico {
 	
 	private void diagnosticoAux(){
 		
-			if(connection==null){
+	
+		if(connection==null){
 			conectar();
 		}
 
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM sintoma");
+			ResultSet rs = st.executeQuery("SELECT name FROM sympton ");
 			System.out.println("\n\tSintomas: \n");
 
 			while (rs.next()) {
-				int id = rs.getInt("id");
-				String nombre = rs.getString("nombre");
-				System.out.println("\tID: " + id + "\Sintoma: " + nombre);
+				String nombre = rs.getString("name");
+				System.out.println("\n\tSintoma: " + nombre + "\n");
 			}
 
-			System.out.println("\n");
 			st.close();
 		}
-
 		catch(Exception e){
 			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
 		}
