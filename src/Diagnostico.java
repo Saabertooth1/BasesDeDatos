@@ -351,7 +351,6 @@ public class Diagnostico {
 	}
 	
 	private void diagnosticoAux(){
-		
 	
 		if(connection==null){
 			conectar();
@@ -359,12 +358,14 @@ public class Diagnostico {
 
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT name FROM sympton ");
+			ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom ");
 			System.out.println("\n\tSintomas: \n");
 
+			
 			while (rs.next()) {
 				String nombre = rs.getString("name");
-				System.out.println("\n\tSintoma: " + nombre + "\n");
+				String sintomas = rs.getString("cui");
+				System.out.println("\n\tSintoma: " + nombre + "\n\tTiposSemantico: " + sintomas + "\n");
 			}
 
 			st.close();
