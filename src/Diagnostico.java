@@ -443,47 +443,26 @@ public class Diagnostico {
 	}
 	private void listarEnfermedadesYCodigosAsociados() {
 		// implementar
-		
-		if(connection==null){
+
+			if(connection==null){
 			conectar();
 		}
-		try {
-		
-			String id = "SELECT (disease.disease_id) "
-					+ "FROM Disease;";
-			Statement st =  connection.createStatement();
-			ResultSet rs = st.executeQuery(id);
 
-			while(rs.next()) {
+		try{
+			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT  disease_id, name, FROM disease +");
+			//		+ " WHERE EN.id = SIN.id");
+			System.out.println("\n\tEnfermedades: \n");
 
-				String id1 = rs.getString(1);
-				String codeasociado   = "SELECT code " + "FROM Disease_has_code"
-						+ "WHERE id= " + id1 + ";";
-				Statement st1 = connection.createStatement();
-				ResultSet rs1 = st1.executeQuery(codeasociado); //codes asociados al id
-
-				String nombre   = "SELECT name " + "FROM Disease"
-						+ "WHERE id= " + id1 + ";";
-				Statement st2 = connection.createStatement();
-				ResultSet rs2 = st2.executeQuery(nombre);
-
-				while(rs1.next()) {
-					String code1 = rs1.getString(1);
-					String sourceasociado   = "SELECT source_id " + "FROM Code"
-							+ "WHERE code= " + code1 + ";";
-					Statement st3 = connection.createStatement();
-					ResultSet rs3 = st3.executeQuery(sourceasociado); //source_id`s asociados a un code
-
-					String sourceid = rs3.getString(1);
-					String nombresource = "SELECT name " + "FROM Source"
-							+ "WHERE source_id=" + sourceid + ";";
-					Statement st4 = connection.createStatement();
-					ResultSet rs4 = st4.executeQuery(nombresource);
-
-					System.out.println(rs2.getObject(1) + "/" + rs1.getObject(1) + "," + rs4.getObject(1));
-				}
+			while (rs.next()) {
+				int id = rs.getInt("disease_id");
+				String nombre = rs.getString("name");
+				System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n");
 			}
-		}	catch(Exception e){
+
+			st.close();
+		}
+		catch(Exception e){
 			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
 		}
 	}
