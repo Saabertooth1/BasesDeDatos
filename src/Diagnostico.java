@@ -314,8 +314,6 @@ public class Diagnostico {
 	}
 
 		private void realizarDiagnostico() {
-		// implementar
-			
 		if(connection==null) {
 			conectar();
 		}
@@ -336,14 +334,17 @@ public class Diagnostico {
 						option = readString();
 					}while (option.equalsIgnoreCase("Y"));
 					
-					String query = "SELECT name FROM disease WHERE ";
+					String query = "SELECT disease_id FROM disease_symptom WHERE ";
+					String queryLong = "";
 					
 					if (symptoms.size() > 0){
 						for (int i = 0; i < symptoms.size()-1; i++){
-							query = query + "cui = '" + symptoms.get(i) + "' || ";
+							queryLong = queryLong + "cui = '" + symptoms.get(i) + "' || ";
 						}
-						query = query + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
+						queryLong = queryLong + "cui = '" + symptoms.get(symptoms.size()-1) + "'";
 					}
+					query = query + queryLong;
+					System.out.println(query);
 					
 					
 					ResultSet rs = st.executeQuery(query);
@@ -370,7 +371,7 @@ public class Diagnostico {
 						break;
 					}
 					Statement st1 = connection.createStatement();
-					ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE id = " + diseaseId);
+					ResultSet rs1 = st1.executeQuery("SELECT name FROM disease WHERE disease_id = " + diseaseId);
 
 					while (rs1.next()) {
 						String disease = rs1.getString("name");
