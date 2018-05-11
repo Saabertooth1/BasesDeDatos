@@ -383,7 +383,7 @@ public class Diagnostico {
 		
 		do {
 			sintomasEnfermedadAux();
-			System.out.println("\tPor favor, introduzca el codigo asociado de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
+			System.out.println("\tPor favor, introduzca el ID de la enfermedad.\n\tPara salir del menú de opciones pulse 0");
 
 			try {
 				Statement st = connection.createStatement();
@@ -392,13 +392,12 @@ public class Diagnostico {
 				switch (option) {
 				
 				default:
-					ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
-							+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+					ResultSet rs = st.executeQuery("SELECT name FROM disease");
 
 					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
 
 					while (rs.next()) {
-						String sintomas = rs.getString("EN.nombre");
+						String sintomas = rs.getString("name");
 						System.out.println("\t " + sintomas);
 					}
 
@@ -417,28 +416,28 @@ public class Diagnostico {
 
 	private void sintomasEnfermedadAux(){
 		
-	
-		if (connection == null){
+		if(connection==null){
 			conectar();
 		}
-		
+
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  id, nombre FROM enfermedad");
-			System.out.println("\nEnfermedades: \n");
+			ResultSet rs = st.executeQuery("SELECT  disease_id, name, FROM disease +");
+			//		+ " WHERE EN.id = SIN.id");
+			System.out.println("\n\tEnfermedades: \n");
 
 			while (rs.next()) {
-				int id = rs.getInt("id");
-				String nombre = rs.getString("nombre");
-				System.out.println("\tID: " + id + "\tEnfermedad: " + nombre);
+				int id = rs.getInt("disease_id");
+				String nombre = rs.getString("name");
+				System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n");
 			}
 
-			System.out.println("\n");
 			st.close();
 		}
 		catch(Exception e){
 			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
 		}
+		
 		
 	}
 	private void listarEnfermedadesYCodigosAsociados() {
