@@ -516,7 +516,7 @@ public class Diagnostico {
 
 
 	private void mostrarEstadisticasBD() {
-				try {
+		try {
 			if(conn==null)
 				conectar();
 
@@ -575,36 +575,40 @@ public class Diagnostico {
 
 			
 			int nSem =0;
-			PreparedStatement pst6 = conn.prepareStatement("SELECT count(*) FROM diagnostico.source ");
+			PreparedStatement pst6 = conn.prepareStatement("SELECT count(*) FROM diagnostico.semantic_type ");
 			ResultSet rs6 = pst6.executeQuery();
 			if(rs6.next())
 				nSem=rs6.getInt("count(*)");
 			for(int i=1; i<nSem+1;i++) {
+				
 				Hashtable<Integer,String> disId = new Hashtable<Integer,String>();
-
-				PreparedStatement pst7 = conn.prepareStatement("SELECT * FROM diagnostico.disease_has_code WHERE source_id = ?; ");
+				PreparedStatement pst8 = conn.prepareStatement("SELECT * FROM diagnostico.symptom_semantic_type WHERE semantic_type_id = ?; ");
+				pst8.setInt(1, i);
+				ResultSet rs8 = pst8.executeQuery();
+				int k=0;
+				while(rs8.next()) {
+					String cui = rs8.getString("cui");
+					PreparedStatement pst11 = conn.prepareStatement("SELECT * FROM diagnostico.symptom WHERE cui = ?; ");
+					pst11.setString(1, cui);
+					ResultSet rs11 = pst11.executeQuery();
+					String dId=null;
+					if(rs11.next())
+						dId = rs11.getString("name");
+					disId.put(k, dId);
+					k++;
+				}
+				
+				PreparedStatement pst7 = conn.prepareStatement("SELECT * FROM diagnostico.semantic_type WHERE semantic_type_id = ?; ");
 				pst7.setInt(1, i);
 				ResultSet rs7 = pst7.executeQuery();
-				while(rs7.next()) {
-					int j = rs7.getInt("disease_id");
-					PreparedStatement pst8 = conn.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?; ");
-					pst8.setInt(1, j);
-					ResultSet rs8 = pst8.executeQuery();
-					String dId = null;
-					if(rs8.next())
-						dId = rs8.getString("name");
-					disId.put(j, dId);
-				}
+				String j=null;
+				if(rs7.next())
+					j=rs7.getString("cui");
+			
 
-				String sem=null;
-				PreparedStatement pst9 = conn.prepareStatement("SELECT * FROM diagnostico.source WHERE source_id = ?; ");
-				pst9.setInt(1, i);
-				ResultSet rs9 = pst9.executeQuery();
-				if(rs9.next())
-					sem=rs9.getString("name");
+
 				
-				
-				System.out.println("Tipo Semantico: "+sem + ", Sintomas asociados: "+disId.values()+"\n" );
+				System.out.println("Tipo Semantico: "+j + ", Sintomas asociados: "+disId.values()+"\n" );
 			}
 				System.out.println("El numero total de Tipos Semanticos es: "+nSem+"\n" );
 
@@ -628,7 +632,6 @@ public class Diagnostico {
 		catch(SQLException ex){
 			System.err.println(ex.getMessage());
 		}
-		
 	}
 
 
