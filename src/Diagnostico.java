@@ -447,58 +447,30 @@ public class Diagnostico {
 		
 	}
 	private void listarEnfermedadesYCodigosAsociados() {
-		// implementar
-
-			if(connection==null){
-			conectar();
-		}
-
-		try{
-			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  disease_id, name, FROM disease +");
-			//		+ " WHERE EN.id = SIN.id");
-			System.out.println("\n\tEnfermedades: \n");
-
-			while (rs.next()) {
-				int id = rs.getInt("disease_id");
-				String nombre = rs.getString("name");
-				System.out.println("\tID: " + id + "\n\tEnfermedad: " + nombre + "\n");
-			}
-
-			st.close();
-		}
-		catch(Exception e){
-			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
-		}
-	}
-
-	private void listarSintomasYTiposSemanticos() {
-		// implementar
-		
-
 		if(connection==null){
 			conectar();
 		}
 
 		try{
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom");
-			
+			ResultSet rs = st.executeQuery("SELECT  disease_id, name FROM disease");
+			System.out.println("\n\tEnfermedades:");
+
 			while (rs.next()) {
-				String cuiSintomas = rs.getString("cui");
+				int id = rs.getInt("disease_id");
 				String nombre = rs.getString("name");
-				
 				Statement st1 = connection.createStatement();
-				ResultSet rs1 = st.executeQuery("SELECT  semantic_type_id FROM symptom_semantic_type WHERE cui="+cuiSintomas);
-				
-				int idTipoSemantico = rs1.getInt("semantic_type_id");
-				
-				Statement st2 = connection.createStatement();
-				ResultSet rs2 = st.executeQuery("SELECT  cui FROM semantic_type WHERE semantic_type_id="+idTipoSemantico);
-				
-				String tipoSemantico = rs2.getString("cui");
-				
-				System.out.println("\n\tSintoma: " + nombre + "\n\t Tipo semantico: " + tipoSemantico + "\n");
+				ResultSet rs1 = st1.executeQuery("SELECT code, source_id FROM disease_has_code WHERE disease_id = " + id);
+				System.out.println("\n\tEnfermedad: " + nombre);
+				while (rs1.next()){
+					String codigo = rs1.getString("code");
+					int sourceid = rs1.getInt("source_id"); 
+					Statement st2 = connection.createStatement();
+					ResultSet rs2 = st2.executeQuery("SELECT name FROM diagnostico.source WHERE source_id = " + sourceid);
+					while (rs2.next()){
+						System.out.println("\t\tCódigo: " + codigo + " - " + rs2.getString("name"));
+					}
+				}
 			}
 
 			st.close();
