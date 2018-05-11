@@ -494,7 +494,6 @@ public class Diagnostico {
 	private void mostrarEstadisticasBD() {
 		// implementar
 		
-				
 		if(connection==null){
 			conectar();
 		}
@@ -502,27 +501,23 @@ public class Diagnostico {
 		try{
 			
 			int contadorEnfermedades = 0;
-			String numEnfermedades= "SELECT (disease.disease_id)"
-					+ "FROM Disease;";
+			
 			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery(numEnfermedades);
+			ResultSet rs = st.executeQuery("SELECT  disease_id FROM disease");
 			
 		
 			while(rs.next()) {
-				String numero = rs.getString(1);
 				contadorEnfermedades++;
 			}
 			
-			System.out.println("El numero de enfermedades es: "+ contadorEnfermedades);
+			System.out.println("El numero de enfermedades es: "+contadorEnfermedades);
 			
 			int contadorSintomas = 0;
-			String numSintomas= "SELECT (symptom.cui)"
-					+ "FROM Symptom;";
+
 			Statement st1 = connection.createStatement();
-			ResultSet rs1 = st1.executeQuery(numSintomas);
+			ResultSet rs1 = st1.executeQuery("SELECT name FROM symptom ");
 			
 			while(rs1.next()) {
-				String numero = rs1.getString(1);
 				contadorSintomas++;
 			}
 			
