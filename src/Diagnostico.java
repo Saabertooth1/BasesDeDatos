@@ -103,13 +103,14 @@ public class Diagnostico {
 	}
 
 	private void crearBD() {
+		
 		PreparedStatement p = null;
 		try {
 			if(conn==null) {
 				conectar();
 			}
 			
-			PreparedStatement pst = conn.prepareStatement("DROP DATABASE diagnostico;");
+			PreparedStatement pst = conn.prepareStatement("DROP SCHEMA diagnostico;");
 			pst.executeUpdate();
 			PreparedStatement ps = conn.prepareStatement("CREATE SCHEMA diagnostico;");
 			ps.executeUpdate();
@@ -191,15 +192,16 @@ public class Diagnostico {
 			LinkedList<String> codeAnadidos = new LinkedList<String>();
 			HashMap<Integer,String> souAnad = new HashMap<Integer,String>();
 			HashMap<String,Integer> souAnadKey = new HashMap<String,Integer>();
+
 			HashMap<Integer,String> semAdded = new HashMap<Integer,String>();
 			HashMap<String,Integer> semAddedKey = new HashMap<String,Integer>();
 			HashMap<Integer,String> sinAdded = new HashMap<Integer,String>();
 			HashMap<Integer,String> sstAdded = new HashMap<Integer,String>();
 			
 			
-			
 			for(int i=0; i<list.size()-1;i++) {
 				HashMap<Integer,String> dSAdded = new HashMap<Integer,String>();
+
 				String []enfSint = null;
 				String aDividir = list.get(i);
 				enfSint = aDividir.split("=",2);
@@ -273,30 +275,30 @@ public class Diagnostico {
 						
 					}
 					
-					if(!sinAdded.containsValue(sem)) {
+					if(!sinAdded.containsValue(cod)) {
 						PreparedStatement pstSin = conn.prepareCall("INSERT INTO `diagnostico`.`symptom` (`cui`, `name`) VALUES (?,?);");
-						pstSin.setString(1, sem);
+						pstSin.setString(1, cod);
 						pstSin.setString(2, sin);
 						pstSin.executeUpdate();
 						pstSin.close();
-						sinAdded.put(sinAdded.size()+1, sem);
+						sinAdded.put(sinAdded.size()+1, cod);
 					}
-					if(!sstAdded.containsValue(sem)) {
+					if(!sstAdded.containsValue(cod)) {
 					int id = semAddedKey.get(sem);
 					PreparedStatement pstSST = conn.prepareCall("INSERT INTO `diagnostico`.`symptom_semantic_type` (`cui`, `semantic_type_id`) VALUES (?,?);");
-					pstSST.setString(1, sem);
+					pstSST.setString(1, cod);
 					pstSST.setInt(2, id);
 					pstSST.executeUpdate();
 					pstSST.close();
-					sstAdded.put(sstAdded.size()+1, sem);
+					sstAdded.put(sstAdded.size()+1, cod);
 					}
-					if(!dSAdded.containsValue(sem)) {
+					if(!dSAdded.containsValue(cod)) {
 						PreparedStatement pstDS = conn.prepareCall("INSERT INTO `diagnostico`.`disease_symptom` (`disease_id`, `cui`) VALUES (?,?);");
 						pstDS.setInt(1, i+1);
-						pstDS.setString(2, sem);
+						pstDS.setString(2, cod);
 						pstDS.executeUpdate();
 						pstDS.close();
-						dSAdded.put(dSAdded.size()+1, sem);
+						dSAdded.put(dSAdded.size()+1, cod);
 					}
 				}
 				
@@ -307,7 +309,6 @@ public class Diagnostico {
 		}catch(SQLException ex) {
 			System.err.println(ex.getMessage());
 		}
-
 	}
 
 		private void realizarDiagnostico() {
