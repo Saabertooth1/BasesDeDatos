@@ -316,66 +316,69 @@ public class Diagnostico {
 		private void realizarDiagnostico() {
 		// implementar
 			
-		int option = -1;
+		String option = "-1";
+		ArrayList<String> symptoms = new ArrayList<String>();
+		int i = 0;
 			
 			do {
 				diagnosticoAux();
-				System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir del menú de opciones pulse 0");
+				System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n\tPara salir al menú de opciones pulse 0");
 
 				try {
 					Statement st = connection.createStatement();
-					option = readInt();
-
-					switch (option) {
+					do{
+						String symptom = readString();
+						symptoms.add(symptom);
+						System.out.println("Desea añadir más síntomas? Y/N");
+						option = readString();
+					}while (option.equalsIgnoreCase("Y"));
 					
-					default:
-						ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
-								+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
+					
+					ResultSet rs = st.executeQuery("SELECT EN.nombre FROM enfermedad EN, trata TR, medicamento M"
+							+ " WHERE EN.id = TR.id_enfermedad AND M.id = TR.id_medicamento AND M.id ="+option);
 
-						System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
+					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
 
-						while (rs.next()) {
-							String enfermedades = rs.getString("EN.nombre");
-							System.out.println("\t " + enfermedades);
-						}
-
-						System.out.println("\n");
-						st.close();
-						break;
+					while (rs.next()) {
+						String enfermedades = rs.getString("EN.nombre");
+						System.out.println("\t " + enfermedades);
 					}
+
+					System.out.println("\n");
+					st.close();
+					break;
+					
 
 
 				} catch (Exception e) {
 					System.err.println("Opción introducida no válida!");
 				}
 			}
-			while (option != 0);
+			while (!option.equals("0"));
 	}
 	
-	private void diagnosticoAux(){
-	
-		if(connection==null){
-			conectar();
-		}
-
-		try{
-			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom ");
-			System.out.println("\n\tSintomas: \n");
-
-			
-			while (rs.next()) {
-				String nombre = rs.getString("name");
-				String sintomas = rs.getString("cui");
-				System.out.println("\n\tSintoma: " + nombre + "\n\tTiposSemantico: " + sintomas + "\n");
+		private void diagnosticoAux(){
+			if(connection==null){
+				conectar();
 			}
 
-			st.close();
-		}
-		catch(Exception e){
-			System.err.println("Error al seleccionar a la BD: " + e.getMessage());
-		}
-		
+			try{
+				Statement st = connection.createStatement();
+				ResultSet rs = st.executeQuery("SELECT  cui, name FROM symptom ");
+				System.out.println("\n\tSintomas: \n");
+
+				while (rs.next()) {
+					String nombre = rs.getString("name");
+					String sintomas = rs.getString("cui");
+					System.out.println("\n\tSintoma: " + nombre + "\n\tTiposSemanticos: " + sintomas + "\n");
+				}
+
+				st.close();
+			}
+			catch(Exception e){
+				System.err.println("Error al seleccionar a la BD: " + e.getMessage());
+			}
+			
 	}
 
 	private void listarSintomasEnfermedad() {
