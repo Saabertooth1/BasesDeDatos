@@ -242,7 +242,7 @@ public class Diagnostico {
 						pstCode.close();
 						codeAnadidos.add(cod);
 						PreparedStatement pstDHC = conn.prepareCall("INSERT INTO `diagnostico`.`disease_has_code` (`disease_id`, `code`, `source_id`) VALUES (?,?,?);");
-						pstDHC.setInt(1, 1);
+						pstDHC.setInt(1, i+1);
 						pstDHC.setString(2, cod);
 						pstDHC.setInt(3, id);
 						pstDHC.executeUpdate();
