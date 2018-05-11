@@ -379,6 +379,7 @@ public class Diagnostico {
 	private void listarSintomasEnfermedad() {
 		// implementar
 		
+		
 		int option = -1;
 		
 		do {
@@ -392,11 +393,16 @@ public class Diagnostico {
 				switch (option) {
 				
 				default:
-					ResultSet rs = st.executeQuery("SELECT name FROM disease");
+					
+					ResultSet rs = st.executeQuery("SELECT cui FROM disease_symptom WHERE disease_id=" +option);
 
 					System.out.println("\n\tLa enfermedad introducida consta de los siguientes sintomas:\n");
 
 					while (rs.next()) {
+						
+						String codigo = rs.getString("cui");
+						Statement st1 = connection.createStatement();
+						ResultSet rs1= st.executeQuery("SELECT name FROM symptom WHERE cui=" +codigo);
 						String sintomas = rs.getString("name");
 						System.out.println("\t " + sintomas);
 					}
