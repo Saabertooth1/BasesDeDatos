@@ -323,6 +323,9 @@ public class Diagnostico {
         do {
             try {
                 Statement st = connection.createStatement();
+
+                //Obtencion de los Síntomas
+
                 do {
                     System.out.println("\tPor favor, introduzca el codigo asociado de los sintomas que padezca.\n");
                     String symptom = readString();
@@ -331,8 +334,12 @@ public class Diagnostico {
                     option = readString();
                 } while (option.equalsIgnoreCase("Y"));
 
+                //Creación del String para el query
+
                 String query = "SELECT disease_id FROM disease_symptom WHERE ";
                 String queryLong = "";
+
+                //Concatenación de los códigos de los síntomas para el query
 
                 if (symptoms.size() > 0) {
                     for (int i = 0; i < symptoms.size() - 1; i++) {
@@ -342,6 +349,7 @@ public class Diagnostico {
                 }
                 query = query + queryLong;
 
+                //Añadimos las enfermedades que coincidan con los sintomas a un ArrayList
 
                 ResultSet rs = st.executeQuery(query);
                 ArrayList<Integer> aux = new ArrayList<Integer>();
@@ -353,7 +361,9 @@ public class Diagnostico {
 
 
                 ArrayList<Integer> resultados = new ArrayList<Integer>();
-
+                
+                //Seleccionamos que el número de enfermedades de los resultados coincida con el número de síntomas introducidos para seleccionar la opción correcta
+                
                 for (int m = 0; m < aux.size() - 1; m++) {
                     int cuenta = 0;
                     for (int n = m; n < aux.size() - 1; n++) {
@@ -374,6 +384,7 @@ public class Diagnostico {
                     }
 
                 }
+                
                 if (!encontrado) {
                     System.out.println("No se ha encontrado ninguna enfermedad con esos síntomas");
                 } else {
