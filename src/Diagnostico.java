@@ -511,36 +511,113 @@ public class Diagnostico {
 
 
 	private void mostrarEstadisticasBD() {
-		// implementar
-		
-		if(connection==null){
-			conectar();
-		}
-		
-		try{
-			
-			int contadorEnfermedades = 0;
-			
-			Statement st = connection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT  disease_id FROM disease");
-			
-		
-			while(rs.next()) {
-				contadorEnfermedades++;
-			}
-			
-			System.out.println("El numero de enfermedades es: "+contadorEnfermedades);
-			
-			int contadorSintomas = 0;
+				try {
+			if(conn==null)
+				conectar();
 
-			Statement st1 = connection.createStatement();
-			ResultSet rs1 = st1.executeQuery("SELECT name FROM symptom ");
+			PreparedStatement pst = conn.prepareStatement("SELECT count(*) FROM diagnostico.disease ");
+			ResultSet rs = pst.executeQuery();
+			if(rs.next())
+				System.out.println("El numero de enfermedades es: "+ rs.getInt("count(*)")+"\n");
+
+			PreparedStatement pst1 = conn.prepareStatement("SELECT count(*) FROM diagnostico.symptom ");
+			ResultSet rs1 = pst1.executeQuery();
+			if(rs1.next())
+				System.out.println("El numero de sintomas es: " + rs1.getInt("count(*)")+"\n");
+
 			
-			while(rs1.next()) {
-				contadorSintomas++;
+			int masSin = 0;
+			int id = 0;
+			for(int i=1; i<12; i++) {
+				PreparedStatement pst2 = conn.prepareStatement("SELECT count(*) FROM diagnostico.disease_symptom WHERE disease_id = ?;");
+				pst2.setInt(1, i);
+				ResultSet rs2 = pst2.executeQuery();
+				if(rs2.next()) {
+				if(rs2.getInt("count(*)")>masSin) {
+					masSin=rs2.getInt("count(*)");
+					id=i;
+				}
+				}
+
 			}
+			PreparedStatement pst3 = conn.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?; ");
+			pst3.setInt(1, id);
+			ResultSet rs3 = pst3.executeQuery();
+			if(rs3.next())
+				System.out.println("La enfermedad con mas sintomas es: "+ rs3.getString("name")+"\n");
+
+
+
+			int menSin = 1000;
+			int idMen = 0;
+			for(int i=1; i<12; i++) {
+				PreparedStatement pst4 = conn.prepareStatement("SELECT count(*) FROM diagnostico.disease_symptom WHERE disease_id = ?;");
+				pst4.setInt(1, i);
+				ResultSet rs4 = pst4.executeQuery();
+				if(rs4.next()) {
+				if(rs4.getInt("count(*)")<menSin) {
+					menSin=rs4.getInt("count(*)");
+					idMen=i;
+				}
+				}
+
+			}
+			PreparedStatement pst5 = conn.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?; ");
+			pst5.setInt(1, idMen);
+			ResultSet rs5 = pst5.executeQuery();
+			if(rs5.next())
+				System.out.println("La enfermedad con menos sintomas es: "+rs5.getString("name")+"\n");
+
 			
-			System.out.println("El numero de sintomas es: " + contadorSintomas);
+			int nSem =0;
+			PreparedStatement pst6 = conn.prepareStatement("SELECT count(*) FROM diagnostico.source ");
+			ResultSet rs6 = pst6.executeQuery();
+			if(rs6.next())
+				nSem=rs6.getInt("count(*)");
+			for(int i=1; i<nSem+1;i++) {
+				Hashtable<Integer,String> disId = new Hashtable<Integer,String>();
+
+				PreparedStatement pst7 = conn.prepareStatement("SELECT * FROM diagnostico.disease_has_code WHERE source_id = ?; ");
+				pst7.setInt(1, i);
+				ResultSet rs7 = pst7.executeQuery();
+				while(rs7.next()) {
+					int j = rs7.getInt("disease_id");
+					PreparedStatement pst8 = conn.prepareStatement("SELECT * FROM diagnostico.disease WHERE disease_id = ?; ");
+					pst8.setInt(1, j);
+					ResultSet rs8 = pst8.executeQuery();
+					String dId = null;
+					if(rs8.next())
+						dId = rs8.getString("name");
+					disId.put(j, dId);
+				}
+
+				String sem=null;
+				PreparedStatement pst9 = conn.prepareStatement("SELECT * FROM diagnostico.source WHERE source_id = ?; ");
+				pst9.setInt(1, i);
+				ResultSet rs9 = pst9.executeQuery();
+				if(rs9.next())
+					sem=rs9.getString("name");
+				
+				
+				System.out.println("Tipo Semantico: "+sem + ", Sintomas asociados: "+disId.values()+"\n" );
+			}
+				System.out.println("El numero total de Tipos Semanticos es: "+nSem+"\n" );
+
+
+				int total = 0;
+				int media = 0;
+				for (int i=1; i<12;i++) {
+					PreparedStatement pst10 = conn.prepareStatement("SELECT count(*) FROM diagnostico.disease_has_code WHERE disease_id = ?; ");
+					pst10.setInt(1, i);
+					ResultSet rs10 = pst10.executeQuery();
+					if(rs10.next())
+						total+=rs10.getInt("count(*)");
+					
+				}
+				media = total/11;
+
+			System.out.println("El numero medio de sintomas: "+media+"\n");
+			
 			
 		}
 		catch(SQLException ex){
